@@ -147,12 +147,12 @@ void UGJT_LevelManager::OnLevelShownCallback()
 {
     UE_LOG(LogTemp, Warning, TEXT("On Level Shown Callback"));
 
-    OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingTargetLevel);
+    /*OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingTargetLevel);
 
     if (!PreviousLevel.IsNull())
     {
         FLatentActionInfo UnloadInfo;
         UGameplayStatics::UnloadStreamLevel(this, FName(*PreviousLevel.GetAssetName()), UnloadInfo, false);
     }
-
+*/
 }

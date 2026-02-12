@@ -22,6 +22,11 @@ protected:
     bool bIsDoneLoading;
 
 public:
+
+#if WITH_EDITORONLY_DATA
+    UPROPERTY()
+    FSoftObjectPath EditorBootstrapMapPath;
+#endif
     UPROPERTY(BlueprintAssignable, Category = "GJT | Navigation")
     FGJTLevelTransitionSignature OnBeforeLevelLoad;
 
