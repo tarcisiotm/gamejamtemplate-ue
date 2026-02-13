@@ -3,10 +3,10 @@
 #include "GJT_LevelManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "LatentActions.h"
-#include "CoreMinimal.h"
-#include "Engine/LevelStreamingDynamic.h"
+#include "Engine/LevelStreaming.h"
 #include "Engine/Engine.h"
 #include "Engine/AssetManager.h"
+
 #if WITH_EDITOR
 #include "Editor.h"
 #endif
@@ -36,6 +36,7 @@ public:
 void UGJT_LevelManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    bIsDoneLoading = true;
 }
 
 ULevelStreaming* UGJT_LevelManager::GetCurrentLevelStreamingObject(const UObject* WorldContextObject)
@@ -66,95 +67,70 @@ TSoftObjectPtr<UWorld> UGJT_LevelManager::GetCurrentLevelReference(const UObject
 void UGJT_LevelManager::LoadLevelByName(FName LevelName)
 {
     UWorld* World = GetWorld();
-
     if (!World || LevelName.IsNone()) { return; }
-
     UGameplayStatics::OpenLevel(World, LevelName);
 }
 
 void UGJT_LevelManager::LoadLevelByReference(TSoftObjectPtr<UWorld> LevelRef)
 {
     UWorld* World = GetWorld();
-
     if (!World || LevelRef.IsNull()) { return; }
-
-    FName LevelName = FName(*LevelRef.GetAssetName());
-    UGameplayStatics::OpenLevel(World, LevelName);
+    UGameplayStatics::OpenLevelBySoftObjectPtr(World, LevelRef);
 }
 
-// todo, remove world context object?
 void UGJT_LevelManager::StreamLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo)
 {
     if (LevelRef.IsNull()) return;
-
-    UWorld* World = GetWorld();
+    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World) return;
 
     bIsDoneLoading = false;
+    LoadingLevel = LevelRef;
 
-    UGameplayStatics::LoadStreamLevelBySoftObjectPtr(
-        World,
-        LevelRef,
-        true,  // Make Visible after load
-        false, // Should NOT block (keep it async)
-        LatentInfo
-    );
+    UGameplayStatics::LoadStreamLevelBySoftObjectPtr(World, LevelRef, true, false, LatentInfo);
+
+    FString TargetPackage = LevelRef.ToSoftObjectPath().GetLongPackageName();
+    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
+    {
+        if (Streaming && Streaming->GetWorldAssetPackageName().Equals(TargetPackage, ESearchCase::IgnoreCase))
+        {
+            Streaming->OnLevelShown.RemoveDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
+            Streaming->OnLevelShown.AddDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
+            break;
+        }
+    }
 
     FLatentActionManager& LatentManager = World->GetLatentActionManager();
     LatentManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID,
         new FGJT_LevelTransitionAction(&bIsDoneLoading, LatentInfo));
 }
 
-void UGJT_LevelManager::HandleLoadCompleted(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef)
-{
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World || !LevelRef.IsValid()) return;
-
-    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
-    {
-        if (!Streaming) continue;
-
-        if (Streaming->GetWorldAssetPackageName().Contains(LevelRef.GetAssetName()))
-        {
-            Streaming->OnLevelShown.AddDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
-
-            Streaming->SetShouldBeLoaded(true);
-            Streaming->SetShouldBeVisible(true);
-            World->FlushLevelStreaming(EFlushLevelStreamingType::Full); // spawn actors immediately
-            break;
-        }
-    }
-
-    PreviousLevel = nullptr;
-    LoadingLevel = nullptr;
-    bIsDoneLoading = true;
-}
-
 float UGJT_LevelManager::GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef)
 {
-    if (LevelRef.IsNull()) return -1.0f;
+    if (LevelRef.IsNull()) return 0.0f;
+    UWorld* World = GetWorld();
+    if (!World) return 0.0f;
 
-    ULevelStreaming* Level = UGameplayStatics::GetStreamingLevel(GetWorld(), *LevelRef.GetAssetName());
+    // Stage 1: Disk -> RAM (80%) using Global Engine tracking
+    FString PackageName = LevelRef.ToSoftObjectPath().GetLongPackageName();
+    float LoadPercent = GetAsyncLoadPercentage(*PackageName);
+
+    // If LoadPercent is -1, it's already in RAM (Stage 1 complete)
+    float TotalProgress = (LoadPercent >= 0.0f) ? (LoadPercent / 100.0f) * 0.8f : 0.8f;
+
+    // Stage 2: RAM -> World (20%)
+    ULevelStreaming* Level = UGameplayStatics::GetStreamingLevel(World, FName(*LevelRef.GetAssetName()));
     if (Level)
     {
-        if (Level->IsLevelLoaded()) return 1.0f;
-
-        return Level->IsLevelVisible() ? 1.0f : 0.0f;
+        if (Level->IsLevelVisible()) return 1.0f;
+        if (Level->IsLevelLoaded()) TotalProgress = FMath::Max(TotalProgress, 0.9f);
     }
-    return 0.0f;
+    return TotalProgress;
 }
-
 
 void UGJT_LevelManager::OnLevelShownCallback()
 {
-    UE_LOG(LogTemp, Warning, TEXT("On Level Shown Callback"));
-
-    /*OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingTargetLevel);
-
-    if (!PreviousLevel.IsNull())
-    {
-        FLatentActionInfo UnloadInfo;
-        UGameplayStatics::UnloadStreamLevel(this, FName(*PreviousLevel.GetAssetName()), UnloadInfo, false);
-    }
-*/
+    bIsDoneLoading = true; // Signals the Latent Action to finish
+    OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel);
+    PreviousLevel = LoadingLevel;
 }

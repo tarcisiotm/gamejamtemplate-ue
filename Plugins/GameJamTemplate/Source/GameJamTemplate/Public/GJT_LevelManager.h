@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "Engine/StreamableManager.h"
 #include "GJT_LevelManager.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGJTLevelTransitionSignature, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
@@ -16,17 +17,16 @@ class GAMEJAMTEMPLATE_API UGJT_LevelManager : public UGameInstanceSubsystem
 protected:
     TSoftObjectPtr<UWorld> PreviousLevel;
     TSoftObjectPtr<UWorld> LoadingLevel;
+
     UPROPERTY()
     ULevelStreaming* LoadingLevelInstance;
-    FLatentActionInfo SavedLatentInfo;
+
     bool bIsDoneLoading;
 
 public:
-
-//#if WITH_EDITORONLY_DATA
     UPROPERTY(BlueprintReadWrite, Category = "Editor Only", meta = (DevelopmentOnly))
     FSoftObjectPath EditorBootstrapMapPath;
-//#endif
+
     UPROPERTY(BlueprintAssignable, Category = "GJT | Navigation")
     FGJTLevelTransitionSignature OnBeforeLevelLoad;
 
@@ -46,15 +46,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "GJT | Navigation")
     void LoadLevelByReference(TSoftObjectPtr<UWorld> LevelRef);
 
-    UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", 
-        meta = (Latent, LatentInfo = "LatentInfo"))
+    UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
     void StreamLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo);
-    
-    UFUNCTION(BlueprintCallable)
-    float GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef);
 
-    UFUNCTION()
-    void HandleLoadCompleted(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef);
+    /** Returns 0.0-0.8 for Disk Load, 0.8-1.0 for World Initialization. */
+    UFUNCTION(BlueprintCallable, Category = "GJT | Navigation")
+    float GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef);
 
     UFUNCTION()
     void OnLevelShownCallback();
