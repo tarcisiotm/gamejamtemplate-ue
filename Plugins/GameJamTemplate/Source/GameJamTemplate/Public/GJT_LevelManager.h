@@ -23,10 +23,10 @@ protected:
 
 public:
 
-#if WITH_EDITORONLY_DATA
-    UPROPERTY()
+//#if WITH_EDITORONLY_DATA
+    UPROPERTY(BlueprintReadWrite, Category = "Editor Only", meta = (DevelopmentOnly))
     FSoftObjectPath EditorBootstrapMapPath;
-#endif
+//#endif
     UPROPERTY(BlueprintAssignable, Category = "GJT | Navigation")
     FGJTLevelTransitionSignature OnBeforeLevelLoad;
 

@@ -82,22 +82,24 @@ void UGJT_LevelManager::LoadLevelByReference(TSoftObjectPtr<UWorld> LevelRef)
     UGameplayStatics::OpenLevel(World, LevelName);
 }
 
+// todo, remove world context object?
 void UGJT_LevelManager::StreamLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo)
 {
     if (LevelRef.IsNull()) return;
 
-    bIsDoneLoading = false;
-
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+    UWorld* World = GetWorld();
     if (!World) return;
 
-    FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
-    Streamable.RequestAsyncLoad(
-        LevelRef.ToSoftObjectPath(),
-        FStreamableDelegate::CreateUObject(this, &UGJT_LevelManager::HandleLoadCompleted, WorldContextObject, LevelRef)
+    bIsDoneLoading = false;
+
+    UGameplayStatics::LoadStreamLevelBySoftObjectPtr(
+        World,
+        LevelRef,
+        true,  // Make Visible after load
+        false, // Should NOT block (keep it async)
+        LatentInfo
     );
 
-    // Needed to make the complete node on the BP work without a (new) callback
     FLatentActionManager& LatentManager = World->GetLatentActionManager();
     LatentManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID,
         new FGJT_LevelTransitionAction(&bIsDoneLoading, LatentInfo));

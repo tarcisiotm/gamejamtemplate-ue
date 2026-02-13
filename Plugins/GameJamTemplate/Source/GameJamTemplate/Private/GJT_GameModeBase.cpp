@@ -21,35 +21,32 @@ void AGJT_GameModeBase::EditorBootstrap()
 {
 #if WITH_EDITOR
     UWorld* World = GetWorld();
-
-    if (!World || this->EditorPersistentLevelRef.IsNull()) return;
+    if (!World) return;
 
     UGJT_LevelManager* LM = World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
-    if (!LM) return;
+    if (!LM || EditorPersistentLevelRef.IsNull()) return;
 
-    FString RawPath = World->GetOutermost()->GetName();
-    FSoftObjectPath CurrentLevelPath(UWorld::RemovePIEPrefix(RawPath));
+    FString CleanCurrentPath = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
 
-    FString PersistentMapName = EditorPersistentLevelRef.GetAssetName();
-    FString CurrentMapName = CurrentLevelPath.GetAssetName();
+    FString PersistentPath = EditorPersistentLevelRef.GetLongPackageName();
 
-    // We are working in a level, load persistent and cache the current level
-    if (!CurrentMapName.Equals(PersistentMapName, ESearchCase::IgnoreCase))
+    // First load: redirecting to persistent level
+    if (!CleanCurrentPath.Equals(PersistentPath, ESearchCase::IgnoreCase))
     {
-        LM->EditorBootstrapMapPath = CurrentLevelPath;
+        LM->EditorBootstrapMapPath = FSoftObjectPath(*CleanCurrentPath);
+
         UGameplayStatics::OpenLevelBySoftObjectPtr(World, EditorPersistentLevelRef, true);
     }
-    // We have arrived at the persistent level, reload the one we were working before
+    // Second load: arriving at the previously opened editor scene
     else if (LM->EditorBootstrapMapPath.IsValid())
     {
-        TSoftObjectPtr<UWorld> LevelRef{ LM->EditorBootstrapMapPath };
+        // ARRIVAL: We match persistent, but have a "suitcase" to unpack
+        TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
+
         LM->EditorBootstrapMapPath.Reset();
 
-        //GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
-        //    FString::Printf(TEXT("BOOTSTRAP: Reloading %s"), *LevelRef.GetAssetName()));
-
-        FLatentActionInfo LatentInfo(0, 999, TEXT("None"), this);
-        LM->StreamLevelAsync(this, LevelRef, LatentInfo);
+        FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
+        LM->StreamLevelAsync(this, LevelToLoad, LatentInfo);
     }
 #endif
 }
