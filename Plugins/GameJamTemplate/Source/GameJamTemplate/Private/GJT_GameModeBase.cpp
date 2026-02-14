@@ -40,13 +40,12 @@ void AGJT_GameModeBase::EditorBootstrap()
     // Second load: arriving at the previously opened editor scene
     else if (LM->EditorBootstrapMapPath.IsValid())
     {
-        // ARRIVAL: We match persistent, but have a "suitcase" to unpack
         TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
 
         LM->EditorBootstrapMapPath.Reset();
 
         FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
-        LM->StreamLevelAsync(this, LevelToLoad, LatentInfo);
+        LM->LoadStreamLevelAsync(this, LevelToLoad, LatentInfo);
     }
 #endif
 }

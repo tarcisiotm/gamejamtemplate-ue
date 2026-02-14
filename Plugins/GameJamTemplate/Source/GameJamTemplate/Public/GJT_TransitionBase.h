@@ -30,10 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GJT")
 	void BroadcastFadeOutFinished(EFadeType fadeType);
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void FadeIn();
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void FadeOut();
 protected:
 	UPROPERTY(EditAnywhere, Category = "GJT | Setup")
