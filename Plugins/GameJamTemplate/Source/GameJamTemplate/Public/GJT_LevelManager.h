@@ -52,15 +52,6 @@ public:
     UPROPERTY(BlueprintReadOnly)
     FSoftObjectPath EditorBootstrapMapPath;
 
-    // Add this wrapper so the old GameMode code still works without a transition
-    UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
-    void LoadStreamLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, bool bUsesTransition, FLatentActionInfo LatentInfo)
-    {
-        // If bUsesTransition is true, we use our new logic. 
-        // If false, we use DoesNotUnload to match the old 'Async Load' behavior.
-        TransitionToLevel(WorldContextObject, LevelRef, ESceneUnloadType::DoesNotUnload, LatentInfo);
-    }
-
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation", meta = (WorldContext = "WorldContextObject"))
     TSoftObjectPtr<UWorld> GetCurrentLevelReference(const UObject* WorldContextObject);
 
@@ -90,8 +81,8 @@ protected:
     ETransitionStage CurrentStage;
     ESceneUnloadType CurrentUnloadType;
 
-    bool bIsFading;
-    bool bIsUnloading;
+    bool bWaitingForTransitionAnimation;
+    bool bIsDoneUnloading;
     bool bIsDoneLoading;
 
     TSoftObjectPtr<UWorld> PreviousLevel;
