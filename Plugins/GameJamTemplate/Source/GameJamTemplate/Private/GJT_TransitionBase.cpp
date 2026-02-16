@@ -28,11 +28,11 @@ void UGJT_TransitionBase::InitializeWidget_Implementation()
 	bHasInit = true;
 }
 
-void UGJT_TransitionBase::FadeIn_Implementation()
+void UGJT_TransitionBase::Show_Implementation()
 {
 }
 
-void UGJT_TransitionBase::FadeOut_Implementation()
+void UGJT_TransitionBase::Hide_Implementation()
 {
 }
 

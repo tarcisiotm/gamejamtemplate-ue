@@ -20,10 +20,10 @@ public:
 	FOnFadeFinished OnFadeFinished;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
-	void FadeIn();
+	void Show();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
-	void FadeOut();
+	void Hide();
 protected:
 	bool bHasInit = false;
 

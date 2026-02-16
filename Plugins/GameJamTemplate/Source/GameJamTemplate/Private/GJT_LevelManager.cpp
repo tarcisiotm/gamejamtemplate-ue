@@ -59,7 +59,7 @@ public:
                     Manager->InternalUnload(WorldContext);
                 }
 
-                Manager->StartFadeIn();
+                Manager->HideTransitionWidget();
                 Manager->CurrentStage = ETransitionStage::FadingIn;
             }
             break;
@@ -96,7 +96,7 @@ void UGJT_LevelManager::TransitionToLevel(const UObject* WorldContextObject, TSo
     bIsDoneLoading = false;
     bIsUnloading = false;
 
-    StartFadeOut();
+    ShowTransitionWidget();
     CurrentStage = ETransitionStage::FadingOut;
 
     World->GetLatentActionManager().AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID, new FGJT_LevelTransitionAction(this, WorldContextObject, LatentInfo));
@@ -189,8 +189,7 @@ void UGJT_LevelManager::InternalUnload(const UObject* WorldContextObject)
 void UGJT_LevelManager::OnLevelShownCallback() { bIsDoneLoading = true; OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel); PreviousLevel = LoadingLevel; }
 void UGJT_LevelManager::OnLevelUnloadedCallback() { bIsUnloading = true; }
 
-// show transition widget
-void UGJT_LevelManager::StartFadeOut()
+void UGJT_LevelManager::ShowTransitionWidget()
 {
     bIsFading = true;
     TSubclassOf<UGJT_TransitionBase> WidgetClass = GetTransitionWidgetClass();
@@ -207,18 +206,17 @@ void UGJT_LevelManager::StartFadeOut()
             {
                 ActiveTransitionWidget->AddToViewport(9999);
             }
-            ActiveTransitionWidget->FadeOut(); 
+            ActiveTransitionWidget->Show(); 
         }
     }
     else bIsFading = false;
 }
 
-// hide transition widget
-void UGJT_LevelManager::StartFadeIn()
+void UGJT_LevelManager::HideTransitionWidget()
 {
     bIsFading = true;
 
-    if (ActiveTransitionWidget) ActiveTransitionWidget->FadeIn();
+    if (ActiveTransitionWidget) ActiveTransitionWidget->Hide();
     else bIsFading = false;
 }
 

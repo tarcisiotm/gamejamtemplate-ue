@@ -71,8 +71,9 @@ protected:
     // Internal Logic
     void InternalLoad(const UObject* WorldContextObject);
     void InternalUnload(const UObject* WorldContextObject);
-    void StartFadeIn();
-    void StartFadeOut();
+
+    void ShowTransitionWidget();
+    void HideTransitionWidget();
 
     // Callbacks
     UFUNCTION() void OnLevelShownCallback();
