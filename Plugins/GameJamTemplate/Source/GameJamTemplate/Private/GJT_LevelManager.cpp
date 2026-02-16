@@ -1,206 +1,280 @@
-// Copyright Tarcisio Games
-
 #include "GJT_LevelManager.h"
 #include "Kismet/GameplayStatics.h"
-#include "LatentActions.h"
 #include "Engine/LevelStreaming.h"
-#include "Engine/Engine.h"
-#include "Engine/AssetManager.h"
 #include "GJT_TransitionBase.h"
 #include "GJT_DeveloperSettings.h"
-
-#if WITH_EDITOR
-#include "Editor.h"
-#endif
+#include "Blueprint/UserWidget.h"
 
 class FGJT_LevelTransitionAction : public FPendingLatentAction
 {
 public:
-    bool* bInternalLoadFinished;
+    UGJT_LevelManager* Manager;
+    const UObject* WorldContext;
     FName ExecutionFunction;
     int32 OutputLink;
     FWeakObjectPtr CallbackTarget;
 
-    FGJT_LevelTransitionAction(bool* InBool, const FLatentActionInfo& LatentInfo)
-        : bInternalLoadFinished(InBool)
-        , ExecutionFunction(LatentInfo.ExecutionFunction)
-        , OutputLink(LatentInfo.Linkage)
-        , CallbackTarget(LatentInfo.CallbackTarget)
-    {
+    FGJT_LevelTransitionAction(UGJT_LevelManager* InManager, const UObject* InContext, const FLatentActionInfo& LatentInfo)
+        : Manager(InManager), WorldContext(InContext), ExecutionFunction(LatentInfo.ExecutionFunction)
+        , OutputLink(LatentInfo.Linkage), CallbackTarget(LatentInfo.CallbackTarget) {
     }
 
     virtual void UpdateOperation(FLatentResponse& Response) override
     {
-        Response.FinishAndTriggerIf(*bInternalLoadFinished, ExecutionFunction, OutputLink, CallbackTarget);
+        if (!Manager) { Response.DoneIf(true); return; }
+
+        //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Transition Stage: %d | Fading: %d | Unloading: %d | Loading: %d"),
+        //    (int32)Manager->CurrentStage, Manager->bIsFading, Manager->bIsUnloading, Manager->bIsDoneLoading));
+
+        switch (Manager->CurrentStage)
+        {
+        case ETransitionStage::FadingOut:
+            if (!Manager->bIsFading)
+            {
+                // If we aren't supposed to unload, skip straight to Loading
+                if (Manager->CurrentUnloadType == ESceneUnloadType::DoesNotUnload) {
+                    Manager->bIsUnloading = true; // Mark as done immediately
+                    Manager->CurrentStage = ETransitionStage::Loading;
+                    Manager->InternalLoad(WorldContext);
+                }
+                else {
+                    Manager->CurrentStage = ETransitionStage::Unloading;
+                    Manager->InternalUnload(WorldContext);
+                }
+            }
+            break;
+
+        case ETransitionStage::Unloading:
+            // Move to loading once the unload signal is received
+            if (Manager->bIsUnloading) {
+                Manager->CurrentStage = ETransitionStage::Loading;
+                Manager->InternalLoad(WorldContext);
+            }
+            break;
+
+        case ETransitionStage::Loading:
+            if (Manager->bIsDoneLoading) {
+                // "After" type unloads here, but doesn't block the fade-in
+                if (Manager->CurrentUnloadType == ESceneUnloadType::AfterNewSceneLoads) {
+                    Manager->InternalUnload(WorldContext);
+                }
+
+                Manager->StartFadeIn();
+                Manager->CurrentStage = ETransitionStage::FadingIn;
+            }
+            break;
+
+        case ETransitionStage::FadingIn:
+            if (!Manager->bIsFading) {
+                Manager->CurrentStage = ETransitionStage::Finished;
+#if WITH_EDITOR
+                Manager->EditorBootstrapMapPath.Reset();
+#endif
+            }
+            break;
+        }
+
+        Response.FinishAndTriggerIf(Manager->CurrentStage == ETransitionStage::Finished, ExecutionFunction, OutputLink, CallbackTarget);
     }
 };
 
 void UGJT_LevelManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    CurrentStage = ETransitionStage::Finished;
     bIsDoneLoading = true;
+    bIsUnloading = true;
+}
+
+void UGJT_LevelManager::TransitionToLevel(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, ESceneUnloadType UnloadType, FLatentActionInfo LatentInfo)
+{
+    UWorld* World = GetWorld();
+    if (!World || LevelRef.IsNull()) return;
+
+    PendingLevel = LevelRef;
+    CurrentUnloadType = UnloadType;
+    bIsDoneLoading = false;
+    bIsUnloading = false;
+
+    StartFadeOut();
+    CurrentStage = ETransitionStage::FadingOut;
+
+    World->GetLatentActionManager().AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID, new FGJT_LevelTransitionAction(this, WorldContextObject, LatentInfo));
+#if WITH_EDITOR
+    //EditorBootstrapMapPath.Reset();
+    UE_LOG(LogTemp, Warning, TEXT("Erasing editor boostrap map path"));
+#endif
+}
+
+void UGJT_LevelManager::InternalLoad(const UObject* WorldContextObject)
+{
+    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+    if (!World) return;
+
+    bIsDoneLoading = false;
+    LoadingLevel = PendingLevel;
+
+    // 1. Kick off the load
+    // Using a basic LatentInfo to avoid the "None" resume point warning
+    FLatentActionInfo LatentInfo;
+    LatentInfo.UUID = FMath::Rand();
+    UGameplayStatics::LoadStreamLevelBySoftObjectPtr(World, PendingLevel, true, false, LatentInfo);
+
+    // 2. Find the streaming object to bind the "Finished" event
+    // Using AssetName is more reliable than LongPackageName in the Editor
+    FString TargetAssetName = PendingLevel.GetAssetName();
+    ULevelStreaming* FoundLevel = nullptr;
+
+    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
+    {
+        // Compare by asset name to avoid UEDPIE prefix mismatches
+        if (Streaming && Streaming->GetWorldAsset().GetAssetName().Equals(TargetAssetName, ESearchCase::IgnoreCase))
+        {
+            FoundLevel = Streaming;
+            break;
+        }
+    }
+
+    if (FoundLevel)
+    {
+        if (FoundLevel->IsLevelVisible())
+        {
+            OnLevelShownCallback();
+        }
+        else
+        {
+            FoundLevel->OnLevelShown.AddUniqueDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LevelManager: Could not find streaming level for %s"), *TargetAssetName);
+        OnLevelShownCallback();
+    }
+}
+
+void UGJT_LevelManager::InternalUnload(const UObject* WorldContextObject)
+{
+    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+    if (!World) { bIsUnloading = true; return; }
+
+    TSoftObjectPtr<UWorld> Target = (CurrentUnloadType == ESceneUnloadType::AfterNewSceneLoads) ? PreviousLevel : GetCurrentLevelReference(WorldContextObject);
+
+    // Safety check: Don't try to unload the persistent level or a null reference
+    if (Target.IsNull() || Target.GetAssetName() == World->GetName())
+    {
+        bIsUnloading = true;
+        return;
+    }
+
+    bIsUnloading = false;
+    UGameplayStatics::UnloadStreamLevelBySoftObjectPtr(World, Target, FLatentActionInfo(), false);
+
+    // Bind delegate
+    FString TargetPackage = Target.ToSoftObjectPath().GetLongPackageName();
+    bool bFound = false;
+    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
+    {
+        if (Streaming && Streaming->GetWorldAssetPackageName().Equals(TargetPackage, ESearchCase::IgnoreCase))
+        {
+            Streaming->OnLevelUnloaded.AddUniqueDynamic(this, &UGJT_LevelManager::OnLevelUnloadedCallback);
+            bFound = true;
+            break;
+        }
+    }
+
+    if (!bFound) bIsUnloading = true; // Nothing found to bind to, so we are "done"
+}
+
+void UGJT_LevelManager::OnLevelShownCallback() { bIsDoneLoading = true; OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel); PreviousLevel = LoadingLevel; }
+void UGJT_LevelManager::OnLevelUnloadedCallback() { bIsUnloading = true; }
+
+// show transition widget
+void UGJT_LevelManager::StartFadeOut()
+{
+    bIsFading = true;
+    TSubclassOf<UGJT_TransitionBase> WidgetClass = GetTransitionWidgetClass();
+
+    if (WidgetClass)
+    {
+        if (!ActiveTransitionWidget) 
+        {
+            ActiveTransitionWidget = CreateWidget<UGJT_TransitionBase>(GetWorld(), WidgetClass); 
+            ActiveTransitionWidget->OnFadeFinished.AddDynamic(this, &UGJT_LevelManager::HandleWidgetFadeFinished);
+        }
+        if (ActiveTransitionWidget) { 
+            if (!ActiveTransitionWidget->IsInViewport()) 
+            {
+                ActiveTransitionWidget->AddToViewport(9999);
+            }
+            ActiveTransitionWidget->FadeOut(); 
+        }
+    }
+    else bIsFading = false;
+}
+
+// hide transition widget
+void UGJT_LevelManager::StartFadeIn()
+{
+    bIsFading = true;
+
+    if (ActiveTransitionWidget) ActiveTransitionWidget->FadeIn();
+    else bIsFading = false;
+}
+
+float UGJT_LevelManager::GetGlobalProgress() const
+{
+    switch (CurrentStage) {
+    case ETransitionStage::FadingOut: return 0.1f;
+    case ETransitionStage::Unloading: return 0.2f;
+    case ETransitionStage::Loading: return 0.2f + (GetStreamingProgress(PendingLevel) * 0.7f);
+    case ETransitionStage::FadingIn: return 0.95f;
+    case ETransitionStage::Finished: return 1.0f;
+    default: return 0.0f;
+    }
+}
+
+float UGJT_LevelManager::GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef) const
+{
+    if (LevelRef.IsNull()) return 0.0f;
+    FString PackageName = LevelRef.ToSoftObjectPath().GetLongPackageName();
+    float LoadPercent = GetAsyncLoadPercentage(*PackageName);
+    float Total = (LoadPercent >= 0.0f) ? (LoadPercent / 100.0f) * 0.8f : 0.8f;
+    if (UWorld* World = GetWorld()) {
+        if (ULevelStreaming* L = UGameplayStatics::GetStreamingLevel(World, FName(*LevelRef.GetAssetName()))) {
+            if (L->IsLevelVisible()) return 1.0f;
+            if (L->IsLevelLoaded()) Total = FMath::Max(Total, 0.9f);
+        }
+    }
+    return Total;
+}
+
+TSoftObjectPtr<UWorld> UGJT_LevelManager::GetCurrentLevelReference(const UObject* WorldContextObject)
+{
+    ULevelStreaming* L = GetCurrentLevelStreamingObject(WorldContextObject);
+
+    if (L) { UE_LOG(LogTemp, Warning, TEXT("current level is indeed valid!")); }
+    else UE_LOG(LogTemp, Warning, TEXT("current level is NOT valid!"));
+
+    return L ? TSoftObjectPtr<UWorld>(L->GetWorldAsset().ToSoftObjectPath()) : nullptr;
 }
 
 ULevelStreaming* UGJT_LevelManager::GetCurrentLevelStreamingObject(const UObject* WorldContextObject)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World) return nullptr;
-
-    for (ULevelStreaming* Level : World->GetStreamingLevels())
-    {
-        if (Level && Level->IsLevelVisible())
-        {
-            return Level;
-        }
-    }
+    for (ULevelStreaming* L : World->GetStreamingLevels()) { if (L && L->IsLevelVisible()) return L; }
     return nullptr;
-}
-
-TSoftObjectPtr<UWorld> UGJT_LevelManager::GetCurrentLevelReference(const UObject* WorldContextObject)
-{
-    ULevelStreaming* LevelObj = GetCurrentLevelStreamingObject(WorldContextObject);
-    if (LevelObj)
-    {
-        return TSoftObjectPtr<UWorld>(LevelObj->GetWorldAsset().ToSoftObjectPath());
-    }
-    return nullptr;
-}
-
-void UGJT_LevelManager::LoadLevelByName(FName LevelName)
-{
-    UWorld* World = GetWorld();
-    if (!World || LevelName.IsNone()) { return; }
-    UGameplayStatics::OpenLevel(World, LevelName);
-}
-
-void UGJT_LevelManager::LoadLevelByReference(TSoftObjectPtr<UWorld> LevelRef)
-{
-    UWorld* World = GetWorld();
-    if (!World || LevelRef.IsNull()) { return; }
-    UGameplayStatics::OpenLevelBySoftObjectPtr(World, LevelRef);
-}
-
-void UGJT_LevelManager::LoadStreamLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo)
-{
-    if (LevelRef.IsNull()) return;
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World) return;
-
-    bIsDoneLoading = false;
-    LoadingLevel = LevelRef;
-
-    UGameplayStatics::LoadStreamLevelBySoftObjectPtr(World, LevelRef, true, false, LatentInfo);
-
-    FString TargetPackage = LevelRef.ToSoftObjectPath().GetLongPackageName();
-    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
-    {
-        if (Streaming && Streaming->GetWorldAssetPackageName().Equals(TargetPackage, ESearchCase::IgnoreCase))
-        {
-            Streaming->OnLevelShown.RemoveDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
-            Streaming->OnLevelShown.AddDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
-            break;
-        }
-    }
-
-    FLatentActionManager& LatentManager = World->GetLatentActionManager();
-    LatentManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID,
-        new FGJT_LevelTransitionAction(&bIsDoneLoading, LatentInfo));
-}
-
-void UGJT_LevelManager::LoadStreamLevelAsyncTestTransition(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo)
-{
-}
-
-void UGJT_LevelManager::UnloadLevelAsync(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, FLatentActionInfo LatentInfo)
-{
-    if (LevelRef.IsNull()) return;
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World) return;
-
-    bIsUnloading = false;
-
-    UGameplayStatics::UnloadStreamLevelBySoftObjectPtr(World, LevelRef, LatentInfo, false);
-
-    FString TargetPackage = LevelRef.ToSoftObjectPath().GetLongPackageName();
-    for (ULevelStreaming* Streaming : World->GetStreamingLevels())
-    {
-        if (Streaming && Streaming->GetWorldAssetPackageName().Equals(TargetPackage, ESearchCase::IgnoreCase))
-        {
-            Streaming->OnLevelUnloaded.RemoveDynamic(this, &UGJT_LevelManager::OnLevelUnloadedCallback);
-            Streaming->OnLevelUnloaded.AddDynamic(this, &UGJT_LevelManager::OnLevelUnloadedCallback);
-            break;
-        }
-    }
-
-    FLatentActionManager& LatentManager = World->GetLatentActionManager();
-    LatentManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID,
-        new FGJT_LevelTransitionAction(&bIsUnloading, LatentInfo));
-}
-
-float UGJT_LevelManager::GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef)
-{
-    if (LevelRef.IsNull()) return 0.0f;
-    UWorld* World = GetWorld();
-    if (!World) return 0.0f;
-
-    // Disk -> RAM (80%)
-    FString PackageName = LevelRef.ToSoftObjectPath().GetLongPackageName();
-    float LoadPercent = GetAsyncLoadPercentage(*PackageName);
-
-    // If LoadPercent is -1, it's already in RAM
-    float TotalProgress = (LoadPercent >= 0.0f) ? (LoadPercent / 100.0f) * 0.8f : 0.8f;
-
-    // RAM -> World (final 20%)
-    ULevelStreaming* Level = UGameplayStatics::GetStreamingLevel(World, FName(*LevelRef.GetAssetName()));
-    if (Level)
-    {
-        if (Level->IsLevelVisible()) return 1.0f;
-        if (Level->IsLevelLoaded()) TotalProgress = FMath::Max(TotalProgress, 0.9f);
-    }
-    return TotalProgress;
-}
-
-void UGJT_LevelManager::OnLevelShownCallback()
-{
-    bIsDoneLoading = true; // Signals the Latent Action to finish
-    OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel);
-    PreviousLevel = LoadingLevel;
-}
-
-void UGJT_LevelManager::OnLevelUnloadedCallback()
-{
-    UE_LOG(LogTemp, Warning, TEXT("GJT Level Manager: Level Unload Confirmed."));
-    bIsUnloading = true;
 }
 
 TSubclassOf<UGJT_TransitionBase> UGJT_LevelManager::GetTransitionWidgetClass() const
 {
-    if (const UGJT_DeveloperSettings* Settings = GetDefault<UGJT_DeveloperSettings>())
-    {
-        return Settings->TransitionWidgetClass.LoadSynchronous();
-    }
-    return nullptr;
+    const UGJT_DeveloperSettings* Settings = GetDefault<UGJT_DeveloperSettings>();
+    return Settings ? Settings->TransitionWidgetClass.LoadSynchronous() : nullptr;
 }
 
-void UGJT_LevelManager::TransitionFadeIn()
+void UGJT_LevelManager::HandleWidgetFadeFinished(EFadeType FadeType)
 {
-    TSubclassOf<UGJT_TransitionBase> WidgetClass = GetTransitionWidgetClass();
-
-    if (WidgetClass)
-    {
-        ActiveTransitionWidget = CreateWidget<UGJT_TransitionBase>(GetWorld(), WidgetClass);
-        ActiveTransitionWidget->AddToViewport(9999);
-        ActiveTransitionWidget->FadeIn();
-    }
-}
-
-void UGJT_LevelManager::TransitionFadeOut()
-{
-    TSubclassOf<UGJT_TransitionBase> WidgetClass = GetTransitionWidgetClass();
-    if (WidgetClass)
-    {
-        ActiveTransitionWidget = CreateWidget<UGJT_TransitionBase>(GetWorld(), WidgetClass);
-        ActiveTransitionWidget->AddToViewport(9999);
-        ActiveTransitionWidget->FadeIn();
-    }
+    OnTransitionFinished.Broadcast(FadeType);
+    bIsFading = false;
 }

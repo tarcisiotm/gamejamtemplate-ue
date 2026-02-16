@@ -12,7 +12,9 @@ void AGJT_GameModeBase::BeginPlay()
 {
     Super::BeginPlay();
 
-    EditorBootstrap();
+#if WITH_EDITOR
+        EditorBootstrap();
+#endif
 }
 
 // During a PIE session, this ensures the currently opened level
@@ -20,6 +22,15 @@ void AGJT_GameModeBase::BeginPlay()
 void AGJT_GameModeBase::EditorBootstrap()
 {
 #if WITH_EDITOR
+
+    FString CurrentMapName = GetWorld()->GetMapName();
+    FString PersistentPath = EditorPersistentLevelRef.GetLongPackageName();
+
+    if (PersistentPath.IsEmpty() || CurrentMapName.Contains(PersistentPath))
+    {
+        return;
+    }
+
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -27,8 +38,6 @@ void AGJT_GameModeBase::EditorBootstrap()
     if (!LM || EditorPersistentLevelRef.IsNull()) return;
 
     FString CleanCurrentPath = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
-
-    FString PersistentPath = EditorPersistentLevelRef.GetLongPackageName();
 
     // First load: redirecting to persistent level
     if (!CleanCurrentPath.Equals(PersistentPath, ESearchCase::IgnoreCase))
@@ -42,10 +51,9 @@ void AGJT_GameModeBase::EditorBootstrap()
     {
         TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
 
-        LM->EditorBootstrapMapPath.Reset();
-
         FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
-        LM->LoadStreamLevelAsync(this, LevelToLoad, LatentInfo);
+        LM->LoadStreamLevelAsync(this, LevelToLoad, false, LatentInfo);
+
     }
 #endif
 }

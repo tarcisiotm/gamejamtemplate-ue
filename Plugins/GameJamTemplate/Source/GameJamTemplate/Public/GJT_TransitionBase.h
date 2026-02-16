@@ -4,16 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "GJT_Types.h"
 #include "GJT_TransitionBase.generated.h"
-
-UENUM(BlueprintType)
-enum class EFadeType : uint8
-{
-	FadeOut UMETA(DisplayName = "Fade Out (To Black)"),
-	FadeIn  UMETA(DisplayName = "Fade In (To Game)")
-};
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFadeFinished, EFadeType, FadeType);
 
 /**
  * 
@@ -27,15 +19,14 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
 	FOnFadeFinished OnFadeFinished;
 
-	UFUNCTION(BlueprintCallable, Category = "GJT")
-	void BroadcastFadeOutFinished(EFadeType fadeType);
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void FadeIn();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void FadeOut();
 protected:
+	bool bHasInit = false;
+
 	UPROPERTY(EditAnywhere, Category = "GJT | Setup")
 	float FadeInDuration = 0.25f;
 	UPROPERTY(EditAnywhere, Category = "GJT | Setup")
@@ -43,6 +34,13 @@ protected:
 
 	virtual void NativeConstruct() override;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
+	void InitializeWidget();
 
-	
+	/// <summary>
+	/// Called from Blueprints
+	/// </summary>
+	/// <param name="fadeType"></param>
+	UFUNCTION(BlueprintCallable, Category = "GJT")
+	void BroadcastFadeFinished(EFadeType fadeType);
 };

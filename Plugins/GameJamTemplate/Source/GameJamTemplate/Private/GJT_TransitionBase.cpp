@@ -8,6 +8,8 @@ void UGJT_TransitionBase::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	InitializeWidget();
+
 	UWorld* WorldPtr = GetWorld();
 	if (!WorldPtr) { return; }
 
@@ -17,8 +19,13 @@ void UGJT_TransitionBase::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT("Level Manager Subsystem not Found!!!"));
 		return; 
 	}
+}
 
-	//levelManager->OnBeforeLevelLoad
+void UGJT_TransitionBase::InitializeWidget_Implementation()
+{
+	if (bHasInit) { return; }
+
+	bHasInit = true;
 }
 
 void UGJT_TransitionBase::FadeIn_Implementation()
@@ -29,7 +36,7 @@ void UGJT_TransitionBase::FadeOut_Implementation()
 {
 }
 
-void UGJT_TransitionBase::BroadcastFadeOutFinished(EFadeType fadeType)
+void UGJT_TransitionBase::BroadcastFadeFinished(EFadeType fadeType)
 {
-	{ OnFadeFinished.Broadcast(fadeType); }
+	OnFadeFinished.Broadcast(fadeType);
 }
