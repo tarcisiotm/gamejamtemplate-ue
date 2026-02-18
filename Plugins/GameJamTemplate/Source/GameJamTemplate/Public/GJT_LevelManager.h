@@ -20,10 +20,12 @@ enum class ESceneUnloadType : uint8
 UENUM()
 enum class ETransitionStage : uint8
 {
-    FadingOut,
-    Unloading,
+    None,
+    ShowingTransition,
+    UnloadingBeforeNewScene,
     Loading,
-    FadingIn,
+    UnloadingAfterNewScene,
+    HidingTransition,
     Finished
 };
 

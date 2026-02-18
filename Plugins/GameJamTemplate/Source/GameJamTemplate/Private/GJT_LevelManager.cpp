@@ -23,12 +23,63 @@ public:
     {
         if (!Manager) { Response.DoneIf(true); return; }
 
-        //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Transition Stage: %d | Fading: %d | Unloading: %d | Loading: %d"),
-        //    (int32)Manager->CurrentStage, Manager->bWaitingForTransitionAnimation, Manager->bIsDoneUnloading, Manager->bIsDoneLoading));
+        GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Transition Stage: %d | Fading: %d | Unloading: %d | Loading: %d"),
+            (int32)Manager->CurrentStage, Manager->bWaitingForTransitionAnimation, Manager->bIsDoneUnloading, Manager->bIsDoneLoading));
 
         switch (Manager->CurrentStage)
         {
-        case ETransitionStage::FadingOut:
+        case ETransitionStage::None: break;
+        case ETransitionStage::ShowingTransition: 
+            if (Manager->bWaitingForTransitionAnimation) { break; } // todo: add no transition case
+            
+            if (Manager->CurrentUnloadType != ESceneUnloadType::BeforeNewSceneLoads) 
+            {
+                // internal method?
+                Manager->CurrentStage = ETransitionStage::Loading;
+                Manager->InternalLoad(WorldContext);
+                break;
+            }
+
+            Manager->CurrentStage = ETransitionStage::UnloadingBeforeNewScene;
+            Manager->InternalUnload(WorldContext);
+
+            break;
+        case ETransitionStage::UnloadingBeforeNewScene:
+            if (!Manager->bIsDoneUnloading) { break; }
+
+            // internal method?
+            Manager->CurrentStage = ETransitionStage::Loading;
+            Manager->InternalLoad(WorldContext);
+            break;
+        case ETransitionStage::Loading:
+            if (!Manager->bIsDoneLoading) { break; }
+
+            if (Manager->CurrentUnloadType != ESceneUnloadType::AfterNewSceneLoads)
+            {
+                // internal method 2?
+                Manager->CurrentStage = ETransitionStage::HidingTransition;
+                Manager->HideTransitionWidget();
+                break;
+            }
+
+            Manager->CurrentStage = ETransitionStage::UnloadingAfterNewScene;
+            Manager->InternalUnload(WorldContext);
+            break;
+        case ETransitionStage::UnloadingAfterNewScene:
+            if (!Manager->bIsDoneUnloading) { break; }
+
+            // internal method 2?
+            Manager->CurrentStage = ETransitionStage::HidingTransition;
+            Manager->HideTransitionWidget();
+            break;
+        case ETransitionStage::HidingTransition:
+            if (Manager->bWaitingForTransitionAnimation) { break; } // todo: add no transition case
+            Manager->CurrentStage = ETransitionStage::Finished;
+#if WITH_EDITOR
+            Manager->EditorBootstrapMapPath.Reset();
+#endif
+            break;
+        /*case ETransitionStage::ShowingTransition:
             if (!Manager->bWaitingForTransitionAnimation)
             {
                 // If we aren't supposed to unload, skip straight to Loading
@@ -59,21 +110,21 @@ public:
                 }
 
                 Manager->HideTransitionWidget();
-                Manager->CurrentStage = ETransitionStage::FadingIn;
+                Manager->CurrentStage = ETransitionStage::HidingTransition;
             }
             break;
 
-        case ETransitionStage::FadingIn:
+        case ETransitionStage::HidingTransition:
             if (!Manager->bWaitingForTransitionAnimation) {
                 Manager->CurrentStage = ETransitionStage::Finished;
 #if WITH_EDITOR
                 Manager->EditorBootstrapMapPath.Reset();
 #endif
             }
-            break;
+            break;*/
         }
-
-        Response.FinishAndTriggerIf(Manager->CurrentStage == ETransitionStage::Finished, ExecutionFunction, OutputLink, CallbackTarget);
+        
+         Response.FinishAndTriggerIf(Manager->CurrentStage == ETransitionStage::Finished, ExecutionFunction, OutputLink, CallbackTarget);
     }
 };
 
@@ -87,6 +138,12 @@ void UGJT_LevelManager::Initialize(FSubsystemCollectionBase& Collection)
 
 void UGJT_LevelManager::TransitionToLevel(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, ESceneUnloadType UnloadType, FLatentActionInfo LatentInfo)
 {
+    if (CurrentStage != ETransitionStage::Finished)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LevelManager: Aborting! TransitionToLevel already in progress."));
+        return; 
+    }
+
     UWorld* World = GetWorld();
     if (!World || LevelRef.IsNull()) return;
 
@@ -96,7 +153,7 @@ void UGJT_LevelManager::TransitionToLevel(const UObject* WorldContextObject, TSo
     bIsDoneUnloading = false;
 
     ShowTransitionWidget();
-    CurrentStage = ETransitionStage::FadingOut;
+    CurrentStage = ETransitionStage::ShowingTransition;
 
     World->GetLatentActionManager().AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID, new FGJT_LevelTransitionAction(this, WorldContextObject, LatentInfo));
 #if WITH_EDITOR
@@ -185,7 +242,13 @@ void UGJT_LevelManager::InternalUnload(const UObject* WorldContextObject)
     if (!bFound) { bIsDoneUnloading = true; }
 }
 
-void UGJT_LevelManager::OnLevelShownCallback() { bIsDoneLoading = true; OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel); PreviousLevel = LoadingLevel; }
+void UGJT_LevelManager::OnLevelShownCallback() 
+{ 
+    bIsDoneLoading = true; 
+    OnAfterLevelLoad.Broadcast(PreviousLevel, LoadingLevel); 
+    PreviousLevel = LoadingLevel; 
+}
+
 void UGJT_LevelManager::OnLevelUnloadedCallback() { bIsDoneUnloading = true; }
 
 void UGJT_LevelManager::ShowTransitionWidget()
@@ -219,13 +282,14 @@ void UGJT_LevelManager::HideTransitionWidget()
     else bWaitingForTransitionAnimation = false;
 }
 
+// todo: refactor
 float UGJT_LevelManager::GetGlobalProgress() const
 {
     switch (CurrentStage) {
-    case ETransitionStage::FadingOut: return 0.1f;
-    case ETransitionStage::Unloading: return 0.2f;
+    case ETransitionStage::ShowingTransition: return 0.1f;
+    case ETransitionStage::UnloadingBeforeNewScene: return 0.2f;
     case ETransitionStage::Loading: return 0.2f + (GetStreamingProgress(PendingLevel) * 0.7f);
-    case ETransitionStage::FadingIn: return 0.95f;
+    case ETransitionStage::HidingTransition: return 0.95f;
     case ETransitionStage::Finished: return 1.0f;
     default: return 0.0f;
     }
@@ -250,8 +314,8 @@ TSoftObjectPtr<UWorld> UGJT_LevelManager::GetCurrentLevelReference(const UObject
 {
     ULevelStreaming* L = GetCurrentLevelStreamingObject(WorldContextObject);
 
-    if (L) { UE_LOG(LogTemp, Warning, TEXT("current level is indeed valid!")); }
-    else UE_LOG(LogTemp, Warning, TEXT("current level is NOT valid!"));
+    //if (L) { UE_LOG(LogTemp, Warning, TEXT("current level is indeed valid!")); }
+    //else UE_LOG(LogTemp, Warning, TEXT("current level is NOT valid!"));
 
     return L ? TSoftObjectPtr<UWorld>(L->GetWorldAsset().ToSoftObjectPath()) : nullptr;
 }
