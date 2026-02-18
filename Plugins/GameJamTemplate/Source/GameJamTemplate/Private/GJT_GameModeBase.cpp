@@ -51,9 +51,9 @@ void AGJT_GameModeBase::EditorBootstrap()
     {
         TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
 
-        FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
-        LM->TransitionToLevel(this, LevelToLoad, ESceneUnloadType::DoesNotUnload, LatentInfo);
 
+        FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
+        LM->TransitionToLevel(this, LevelToLoad, ESceneUnloadType::DoesNotUnload, LatentInfo, false);
     }
 #endif
 }

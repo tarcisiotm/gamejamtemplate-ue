@@ -20,7 +20,6 @@ enum class ESceneUnloadType : uint8
 UENUM()
 enum class ETransitionStage : uint8
 {
-    None,
     ShowingTransition,
     UnloadingBeforeNewScene,
     Loading,
@@ -43,7 +42,7 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
     UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
-    void TransitionToLevel(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, ESceneUnloadType UnloadType, FLatentActionInfo LatentInfo);
+    void TransitionToLevel(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, ESceneUnloadType UnloadType, FLatentActionInfo LatentInfo, bool usesTransition = true);
 
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation")
     float GetGlobalProgress() const;
@@ -83,6 +82,7 @@ protected:
     ETransitionStage CurrentStage;
     ESceneUnloadType CurrentUnloadType;
 
+    bool bUsesTransition;
     bool bWaitingForTransitionAnimation;
     bool bIsDoneUnloading;
     bool bIsDoneLoading;
