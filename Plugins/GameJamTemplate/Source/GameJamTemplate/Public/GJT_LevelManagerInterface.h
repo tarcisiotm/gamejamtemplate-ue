@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "GJT_Types.h"
 #include "GJT_LevelManagerInterface.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGJT_OnTransitionComplete);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(F_GJT_OnLevelTransitionComplete, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
 
 UENUM(BlueprintType)
 enum class ESceneUnloadType : uint8
@@ -34,5 +35,6 @@ public:
         bool bUsesTransition = true
     );
 
-    //virtual bool IsCurrentlyTransitioning() const = 0;
+    virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() = 0;
+    virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() = 0;
 };

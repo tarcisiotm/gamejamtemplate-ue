@@ -17,7 +17,7 @@ class GAMEJAMTEMPLATE_API UGJT_TransitionBase : public UUserWidget
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-	FOnFadeFinished OnFadeFinished;
+	F_GJT_OnFadeFinished OnFadeFinished;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void Show();

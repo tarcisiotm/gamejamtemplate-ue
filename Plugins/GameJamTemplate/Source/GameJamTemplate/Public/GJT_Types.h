@@ -12,4 +12,4 @@ enum class EFadeType : uint8
     FadeIn  UMETA(DisplayName = "Fade In (To Game)")
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFadeFinished, EFadeType, FadeType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(F_GJT_OnFadeFinished, EFadeType, FadeType);

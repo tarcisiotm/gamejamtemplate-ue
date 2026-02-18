@@ -5,6 +5,7 @@
 
 #if WITH_EDITOR
 #include "GJT_LevelManager.h"
+#include "GJT_SubsystemHelperLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #endif
 
@@ -51,8 +52,15 @@ void AGJT_GameModeBase::EditorBootstrap()
     {
         TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
 
-        FLatentActionInfo LatentInfo(0, FMath::Rand(), TEXT("None"), this);
-        LM->TransitionToLevel(this, LevelToLoad, ESceneUnloadType::DoesNotUnload, LatentInfo, false);
+        auto lmi = UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(World);
+
+        IGJT_LevelManagerInterface::Execute_TransitionToLevel(
+            lmi.GetObject(),
+            this,
+            LevelToLoad,
+            ESceneUnloadType::DoesNotUnload,
+            false
+        );
     }
 #endif
 }

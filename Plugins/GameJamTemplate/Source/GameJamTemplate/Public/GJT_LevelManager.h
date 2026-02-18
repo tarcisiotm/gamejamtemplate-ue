@@ -4,18 +4,12 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Engine/LatentActionManager.h"
 #include "GJT_Types.h"
+#include "GJT_LevelManagerInterface.h"
+#include "Tickable.h"
 #include "GJT_LevelManager.generated.h"
 
 class UGJT_TransitionBase;
 class ULevelStreaming;
-
-UENUM(BlueprintType)
-enum class ESceneUnloadType : uint8
-{
-    DoesNotUnload UMETA(DisplayName = "Does Not Unload"),
-    BeforeNewSceneLoads UMETA(DisplayName = "Before New Scene Loads"),
-    AfterNewSceneLoads  UMETA(DisplayName = "After New Scene Loads")
-};
 
 UENUM()
 enum class ETransitionStage : uint8
@@ -28,27 +22,39 @@ enum class ETransitionStage : uint8
     Finished
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLevelTransitionSignature, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
 
 UCLASS()
-class GAMEJAMTEMPLATE_API UGJT_LevelManager : public UGameInstanceSubsystem
+class GAMEJAMTEMPLATE_API UGJT_LevelManager : public UGameInstanceSubsystem, public IGJT_LevelManagerInterface, public FTickableGameObject
 {
     GENERATED_BODY()
-
-    // This allows the Latent Action to see our protected variables
-    friend class FGJT_LevelTransitionAction;
 
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-    UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
-    void TransitionToLevel(const UObject* WorldContextObject, TSoftObjectPtr<UWorld> LevelRef, ESceneUnloadType UnloadType, FLatentActionInfo LatentInfo, bool usesTransition = true);
+    // FTickableGameObject Interface
+    virtual void Tick(float DeltaTime) override;
+    virtual bool IsTickable() const override;
+    virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UGJT_LevelManager, STATGROUP_Tickables); }
+
+    //UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
+    virtual void TransitionToLevel_Implementation(
+        const UObject* WorldContextObject,
+        const TSoftObjectPtr<UWorld>& LevelRef,
+        ESceneUnloadType UnloadType,
+        //FLatentActionInfo LatentInfo,
+        bool bUsesTransition) override;
+
+    virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() override { return OnAfterLevelLoad; }
+    virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() override { return OnTransitionFinished; }
 
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation")
     float GetGlobalProgress() const;
 
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-    FOnLevelTransitionSignature OnAfterLevelLoad;
+    F_GJT_OnLevelTransitionComplete OnAfterLevelLoad;
+
+    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    F_GJT_OnFadeFinished OnTransitionFinished;
 
     UPROPERTY(BlueprintReadOnly)
     FSoftObjectPath EditorBootstrapMapPath;
@@ -56,11 +62,11 @@ public:
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation", meta = (WorldContext = "WorldContextObject"))
     TSoftObjectPtr<UWorld> GetCurrentLevelReference(const UObject* WorldContextObject);
 
-    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
-    FOnFadeFinished OnTransitionFinished;
+
 
 protected:
     // Internal Logic
+    void UpdateCurrentLoadingStage(const UObject* WorldContextObject);
     void InternalLoad(const UObject* WorldContextObject);
     void InternalUnload(const UObject* WorldContextObject);
 
