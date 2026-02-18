@@ -21,6 +21,16 @@ public:
 
     virtual void UpdateOperation(FLatentResponse& Response) override
     {
+        auto ProceedToLoading = [this]() {
+            Manager->CurrentStage = ETransitionStage::Loading;
+            Manager->InternalLoad(WorldContext);
+        };
+
+        auto HideTransition = [this]() {
+            Manager->CurrentStage = ETransitionStage::HidingTransition;
+            Manager->HideTransitionWidget();
+        };
+
         if (!Manager) { Response.DoneIf(true); return; }
 
         GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Transition Stage: %d | Fading: %d | Unloading: %d | Loading: %d"),
@@ -33,9 +43,7 @@ public:
             
                 if (Manager->CurrentUnloadType != ESceneUnloadType::BeforeNewSceneLoads) 
                 {
-                    // internal method?
-                    Manager->CurrentStage = ETransitionStage::Loading;
-                    Manager->InternalLoad(WorldContext);
+                    ProceedToLoading();
                     break;
                 }
 
@@ -46,18 +54,14 @@ public:
             case ETransitionStage::UnloadingBeforeNewScene:
                 if (!Manager->bIsDoneUnloading) { break; }
 
-                // internal method?
-                Manager->CurrentStage = ETransitionStage::Loading;
-                Manager->InternalLoad(WorldContext);
+                ProceedToLoading();
                 break;
             case ETransitionStage::Loading:
                 if (!Manager->bIsDoneLoading) { break; }
 
                 if (Manager->CurrentUnloadType != ESceneUnloadType::AfterNewSceneLoads)
                 {
-                    // internal method 2?
-                    Manager->CurrentStage = ETransitionStage::HidingTransition;
-                    Manager->HideTransitionWidget();
+                    HideTransition();
                     break;
                 }
 
@@ -67,9 +71,7 @@ public:
             case ETransitionStage::UnloadingAfterNewScene:
                 if (!Manager->bIsDoneUnloading) { break; }
 
-                // internal method 2?
-                Manager->CurrentStage = ETransitionStage::HidingTransition;
-                Manager->HideTransitionWidget();
+                HideTransition();
                 break;
             case ETransitionStage::HidingTransition:
                 if (Manager->bUsesTransition && Manager->bWaitingForTransitionAnimation) { break; }
@@ -128,7 +130,7 @@ void UGJT_LevelManager::InternalLoad(const UObject* WorldContextObject)
     LoadingLevel = PendingLevel;
 
     FLatentActionInfo LatentInfo;
-    //LatentInfo.UUID = FMath::Rand();
+    LatentInfo.UUID = FMath::Rand();
     UGameplayStatics::LoadStreamLevelBySoftObjectPtr(World, PendingLevel, true, false, LatentInfo);
 
     FString TargetAssetName = PendingLevel.GetAssetName();
@@ -138,8 +140,6 @@ void UGJT_LevelManager::InternalLoad(const UObject* WorldContextObject)
     {
         if (Streaming && Streaming->GetWorldAsset().GetAssetName().Equals(TargetAssetName, ESearchCase::IgnoreCase))
         {
-            UE_LOG(LogTemp, Warning, TEXT("LevelManager 1: for %s"), *TargetAssetName);
-
             FoundLevel = Streaming;
             break;
         }
@@ -149,18 +149,17 @@ void UGJT_LevelManager::InternalLoad(const UObject* WorldContextObject)
     {
         if (FoundLevel->IsLevelVisible())
         {
-            UE_LOG(LogTemp, Warning, TEXT("LevelManager 2: for %s"), *TargetAssetName);
             OnLevelShownCallback();
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("LevelManager 3: for %s"), *TargetAssetName);
             FoundLevel->OnLevelShown.AddUniqueDynamic(this, &UGJT_LevelManager::OnLevelShownCallback);
         }
     }
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("LevelManager: Could not find streaming level for %s"), *TargetAssetName);
+
         OnLevelShownCallback();
     }
 }
