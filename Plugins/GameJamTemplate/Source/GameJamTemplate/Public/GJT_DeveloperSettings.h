@@ -17,7 +17,7 @@ class GAMEJAMTEMPLATE_API UGJT_DeveloperSettings : public UDeveloperSettings
 
 public:
     /** The Blueprint Widget used for level transitions */
-    UPROPERTY(Config, EditAnywhere, Category = "UI")
+    UPROPERTY(Config, EditAnywhere, Category = "UI", meta = (MustImplement = "/Script/GameJamTemplate.GJT_TransitionInterface"))
     TSoftClassPtr<UGJT_TransitionBase> TransitionWidgetClass;
 	
 };
