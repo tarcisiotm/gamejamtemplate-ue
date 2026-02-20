@@ -38,6 +38,11 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT")
     float GetCurrentTransitionProgress();
 
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT")
+    FSoftObjectPath EditorOnly_GetEditorBootstrapMapPath() const;
+
+    virtual void EditorOnly_SetEditorBootstrapMapPath(FSoftObjectPath EditorBootstrapMapPath) = 0;
+
     virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() = 0;
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() = 0;
     virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() = 0;

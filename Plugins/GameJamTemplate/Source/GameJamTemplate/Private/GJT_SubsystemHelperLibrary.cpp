@@ -10,7 +10,6 @@
 //    UWorld* World = WorldContextObject->GetWorld();
 //    if (!World) return nullptr;
 //
-//    // Use the engine's built-in subsystem fetch
 //    return World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
 //}
 
@@ -19,10 +18,8 @@ TScriptInterface<IGJT_LevelManagerInterface> UGJT_SubsystemHelperLibrary::GetLev
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World || !World->GetGameInstance()) return nullptr;
 
-    // Get the concrete class first
     UGJT_LevelManager* Subsystem = World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
 
-    // Return it as a TScriptInterface
     TScriptInterface<IGJT_LevelManagerInterface> Interface;
     Interface.SetObject(Subsystem);
     Interface.SetInterface(Cast<IGJT_LevelManagerInterface>(Subsystem));

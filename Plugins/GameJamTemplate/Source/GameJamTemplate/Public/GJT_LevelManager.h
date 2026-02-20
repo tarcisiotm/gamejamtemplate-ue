@@ -21,7 +21,6 @@ enum class ETransitionStage : uint8
     Finished
 };
 
-
 UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_LevelManager : public UGameInstanceSubsystem, public IGJT_LevelManagerInterface, public FTickableGameObject
 {
@@ -38,24 +37,30 @@ public:
         const UObject* WorldContextObject,
         const TSoftObjectPtr<UWorld>& LevelRef,
         ESceneUnloadType UnloadType,
-        //FLatentActionInfo LatentInfo,
         bool bUsesTransition) override;
 
     virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() override { return OnAfterLevelLoad; }
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() override { return OnTransitionFinished; }
     virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() override { return OnLevelTransitionProgress; }
 
+    virtual FSoftObjectPath EditorOnly_GetEditorBootstrapMapPath_Implementation() const override
+    {
+#if WITH_EDITOR
+        return EditorBootstrapMapPath;
+#else
+        return FSoftObjectPath();
+#endif
+    }
+
+    virtual void EditorOnly_SetEditorBootstrapMapPath(FSoftObjectPath NewPath) override
+    {
+#if WITH_EDITOR
+        EditorBootstrapMapPath = NewPath;
+#endif
+    }
+
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation")
     float GetCurrentTransitionProgress_Implementation() override;
-
-    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-    F_GJT_OnLevelTransitionComplete OnAfterLevelLoad;
-
-    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
-    F_GJT_OnFadeFinished OnTransitionFinished;
-
-    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
-    F_GJT_OnLevelTransitionProgress OnLevelTransitionProgress;
 
     UPROPERTY(BlueprintReadOnly)
     FSoftObjectPath EditorBootstrapMapPath;
@@ -64,22 +69,14 @@ public:
     TSoftObjectPtr<UWorld> GetCurrentLevelReference(const UObject* WorldContextObject);
 
 protected:
-    void UpdateCurrentLoadingStage(const UObject* WorldContextObject);
-    void InternalLoad(const UObject* WorldContextObject);
-    void InternalUnload(const UObject* WorldContextObject);
+    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
+    F_GJT_OnLevelTransitionComplete OnAfterLevelLoad;
 
-    void ShowTransitionWidget();
-    void HideTransitionWidget();
+    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    F_GJT_OnFadeFinished OnTransitionFinished;
 
-    UFUNCTION() void OnLevelShownCallback();
-    UFUNCTION() void OnLevelUnloadedCallback();
-
-    ULevelStreaming* GetCurrentLevelStreamingObject(const UObject* WorldContextObject);
-    TSubclassOf<UUserWidget> GetTransitionWidgetClass() const;
-
-    UFUNCTION()
-    void HandleWidgetFadeFinished(EFadeType FadeType);
-    float GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef) const;
+    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    F_GJT_OnLevelTransitionProgress OnLevelTransitionProgress;
 
     ETransitionStage CurrentStage;
     ESceneUnloadType CurrentUnloadType;
@@ -98,4 +95,25 @@ protected:
 
     UPROPERTY()
     TScriptInterface<IGJT_TransitionInterface> TransitionWidgetInterface;
+
+    ULevelStreaming* GetCurrentLevelStreamingObject(const UObject* WorldContextObject);
+    TSubclassOf<UUserWidget> GetTransitionWidgetClass() const;
+
+    void UpdateCurrentLoadingStage(const UObject* WorldContextObject);
+    void InternalLoad(const UObject* WorldContextObject);
+    void InternalUnload(const UObject* WorldContextObject);
+
+    void ShowTransitionWidget();
+    void HideTransitionWidget();
+
+    UFUNCTION() 
+    void OnLevelShownCallback();
+
+    UFUNCTION()
+    void OnLevelUnloadedCallback();
+
+    UFUNCTION()
+    void HandleWidgetFadeFinished(EFadeType FadeType);
+    float GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef) const;
+
 };

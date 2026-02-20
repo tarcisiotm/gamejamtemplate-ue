@@ -4,7 +4,6 @@
 #include "GJT_GameModeBase.h"
 
 #if WITH_EDITOR
-#include "GJT_LevelManager.h"
 #include "GJT_SubsystemHelperLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #endif
@@ -35,28 +34,26 @@ void AGJT_GameModeBase::EditorBootstrap()
     UWorld* World = GetWorld();
     if (!World) return;
 
-    UGJT_LevelManager* LM = World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
-    auto lmi = UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(World);
+    auto levelManagerInterface = UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(World);
 
-    if (!LM || EditorPersistentLevelRef.IsNull()) return;
+    if (!levelManagerInterface || EditorPersistentLevelRef.IsNull()) return;
 
     FString CleanCurrentPath = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
 
     // First load: redirecting to persistent level
     if (!CleanCurrentPath.Equals(PersistentPath, ESearchCase::IgnoreCase))
     {
-        LM->EditorBootstrapMapPath = FSoftObjectPath(*CleanCurrentPath);
+        levelManagerInterface->EditorOnly_SetEditorBootstrapMapPath(FSoftObjectPath(*CleanCurrentPath));
 
         UGameplayStatics::OpenLevelBySoftObjectPtr(World, EditorPersistentLevelRef, true);
     }
     // Second load: arriving at the previously opened editor scene
-    else if (LM->EditorBootstrapMapPath.IsValid())
+    else if (levelManagerInterface->Execute_EditorOnly_GetEditorBootstrapMapPath(levelManagerInterface.GetObject()).IsValid())
     {
-        TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
-
+        TSoftObjectPtr<UWorld> LevelToLoad(levelManagerInterface->Execute_EditorOnly_GetEditorBootstrapMapPath(levelManagerInterface.GetObject()));
 
         IGJT_LevelManagerInterface::Execute_TransitionToLevel(
-            lmi.GetObject(),
+            levelManagerInterface.GetObject(),
             this,
             LevelToLoad,
             ESceneUnloadType::DoesNotUnload,

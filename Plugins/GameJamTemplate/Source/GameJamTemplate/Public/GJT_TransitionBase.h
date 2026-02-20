@@ -37,7 +37,7 @@ protected:
 
 	// This is used so that the transition does not disappear too quickly in case the games loads too fast.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GJT | Setup")
-	float MinShownTime = 1.0f;
+	float MinShownTime = 0.5f;
 
 	float WidgetShownTimeStamp = 0;
 
