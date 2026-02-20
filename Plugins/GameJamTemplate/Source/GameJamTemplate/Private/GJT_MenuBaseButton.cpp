@@ -40,9 +40,9 @@ void UGJT_MenuBaseButton::OnClicked_Implementation()
 
 void UGJT_MenuBaseButton::OnInternalButtonClicked()
 {
-    if (OnGJTClicked.IsBound())
+    if (OnButtonClicked.IsBound())
     {
-        OnGJTClicked.Broadcast();
+        OnButtonClicked.Broadcast();
     }
 }
 

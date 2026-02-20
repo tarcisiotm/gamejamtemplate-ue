@@ -22,7 +22,7 @@ class GAMEJAMTEMPLATE_API UGJT_MenuBaseButton : public UUserWidget
 
 public:
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-    FOnGJTButtonClicked OnGJTClicked;
+    FOnGJTButtonClicked OnButtonClicked;
 
 protected:
     UPROPERTY(meta = (BindWidget))

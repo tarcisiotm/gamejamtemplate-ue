@@ -30,6 +30,7 @@ public class GameJamTemplate : ModuleRules
                 "Engine",
                 "InputCore",
                 "UMG",
+                "DeveloperSettings",
                 //"Slate",
                 //"SlateCore",
             }
