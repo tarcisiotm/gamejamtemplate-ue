@@ -68,6 +68,8 @@ void UGJT_LevelManager::UpdateCurrentLoadingStage(
     //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Transition Stage: %d | Fading: %d | Unloading: %d | Loading: %d"),
     //    (int32)CurrentStage, bWaitingForTransitionAnimation, bIsDoneUnloading, bIsDoneLoading));
 
+   // OnLevelTransitionProgress.Broadcast(GetGlobalProgress());
+
     switch (CurrentStage)
     {
     case ETransitionStage::ShowingTransition:
@@ -237,14 +239,13 @@ void UGJT_LevelManager::HideTransitionWidget()
     else bWaitingForTransitionAnimation = false;
 }
 
-// todo: refactor
-float UGJT_LevelManager::GetGlobalProgress() const
+float UGJT_LevelManager::GetCurrentTransitionProgress_Implementation()
 {
     switch (CurrentStage) {
     case ETransitionStage::ShowingTransition: return 0.1f;
     case ETransitionStage::UnloadingBeforeNewScene: return 0.2f;
     case ETransitionStage::Loading: return 0.2f + (GetStreamingProgress(PendingLevel) * 0.7f);
-    case ETransitionStage::HidingTransition: return 0.95f;
+    case ETransitionStage::HidingTransition: return 1.0f;
     case ETransitionStage::Finished: return 1.0f;
     default: return 0.0f;
     }

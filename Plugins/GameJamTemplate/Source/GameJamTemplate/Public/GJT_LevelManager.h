@@ -46,15 +46,19 @@ public:
 
     virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() override { return OnAfterLevelLoad; }
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() override { return OnTransitionFinished; }
+    virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() override { return OnLevelTransitionProgress; }
 
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation")
-    float GetGlobalProgress() const;
+    float GetCurrentTransitionProgress_Implementation() override;
 
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnLevelTransitionComplete OnAfterLevelLoad;
 
     UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
     F_GJT_OnFadeFinished OnTransitionFinished;
+
+    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    F_GJT_OnLevelTransitionProgress OnLevelTransitionProgress;
 
     UPROPERTY(BlueprintReadOnly)
     FSoftObjectPath EditorBootstrapMapPath;

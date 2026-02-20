@@ -6,6 +6,7 @@
 #include "GJT_LevelManagerInterface.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(F_GJT_OnLevelTransitionComplete, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(F_GJT_OnLevelTransitionProgress, float, Progress);
 
 UENUM(BlueprintType)
 enum class ESceneUnloadType : uint8
@@ -35,6 +36,12 @@ public:
         bool bUsesTransition = true
     );
 
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT")
+    float GetCurrentTransitionProgress();
+
+    //float GetTransitionProgress()
+
     virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() = 0;
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() = 0;
+    virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() = 0;
 };
