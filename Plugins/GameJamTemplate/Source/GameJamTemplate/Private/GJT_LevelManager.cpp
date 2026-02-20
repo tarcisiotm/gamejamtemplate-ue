@@ -223,7 +223,7 @@ void UGJT_LevelManager::ShowTransitionWidget()
             {
                 ActiveTransitionWidget->AddToViewport(9999);
             }
-            ActiveTransitionWidget->Show(); 
+            IGJT_TransitionInterface::Execute_Show(ActiveTransitionWidget);
         }
     }
     else bWaitingForTransitionAnimation = false;
@@ -235,7 +235,7 @@ void UGJT_LevelManager::HideTransitionWidget()
 
     bWaitingForTransitionAnimation = true;
 
-    if (ActiveTransitionWidget) ActiveTransitionWidget->Hide();
+    if (ActiveTransitionWidget) IGJT_TransitionInterface::Execute_Hide(ActiveTransitionWidget);
     else bWaitingForTransitionAnimation = false;
 }
 
