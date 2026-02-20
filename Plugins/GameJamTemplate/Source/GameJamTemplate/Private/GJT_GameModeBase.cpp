@@ -36,6 +36,8 @@ void AGJT_GameModeBase::EditorBootstrap()
     if (!World) return;
 
     UGJT_LevelManager* LM = World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
+    auto lmi = UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(World);
+
     if (!LM || EditorPersistentLevelRef.IsNull()) return;
 
     FString CleanCurrentPath = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
@@ -52,7 +54,6 @@ void AGJT_GameModeBase::EditorBootstrap()
     {
         TSoftObjectPtr<UWorld> LevelToLoad(LM->EditorBootstrapMapPath);
 
-        auto lmi = UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(World);
 
         IGJT_LevelManagerInterface::Execute_TransitionToLevel(
             lmi.GetObject(),

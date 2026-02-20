@@ -1,8 +1,9 @@
 #include "GJT_LevelManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/LevelStreaming.h"
-#include "GJT_TransitionBase.h"
 #include "GJT_DeveloperSettings.h"
+#include "GJT_TransitionInterface.h"
+
 #include "Blueprint/UserWidget.h"
 
 void UGJT_LevelManager::Initialize(FSubsystemCollectionBase& Collection)
@@ -204,41 +205,6 @@ void UGJT_LevelManager::OnLevelUnloadedCallback()
     bIsDoneUnloading = true; 
 }
 
-void UGJT_LevelManager::ShowTransitionWidget()
-{
-    if (!bUsesTransition) { return; }
-
-    bWaitingForTransitionAnimation = true;
-    TSubclassOf<UGJT_TransitionBase> WidgetClass = GetTransitionWidgetClass();
-
-    if (WidgetClass)
-    {
-        if (!ActiveTransitionWidget) 
-        {
-            ActiveTransitionWidget = CreateWidget<UGJT_TransitionBase>(GetWorld(), WidgetClass); 
-            ActiveTransitionWidget->OnFadeFinished.AddDynamic(this, &UGJT_LevelManager::HandleWidgetFadeFinished);
-        }
-        if (ActiveTransitionWidget) { 
-            if (!ActiveTransitionWidget->IsInViewport()) 
-            {
-                ActiveTransitionWidget->AddToViewport(9999);
-            }
-            IGJT_TransitionInterface::Execute_Show(ActiveTransitionWidget);
-        }
-    }
-    else bWaitingForTransitionAnimation = false;
-}
-
-void UGJT_LevelManager::HideTransitionWidget()
-{
-    if (!bUsesTransition) { return; }
-
-    bWaitingForTransitionAnimation = true;
-
-    if (ActiveTransitionWidget) IGJT_TransitionInterface::Execute_Hide(ActiveTransitionWidget);
-    else bWaitingForTransitionAnimation = false;
-}
-
 float UGJT_LevelManager::GetCurrentTransitionProgress_Implementation()
 {
     switch (CurrentStage) {
@@ -280,7 +246,54 @@ ULevelStreaming* UGJT_LevelManager::GetCurrentLevelStreamingObject(const UObject
     return nullptr;
 }
 
-TSubclassOf<UGJT_TransitionBase> UGJT_LevelManager::GetTransitionWidgetClass() const
+void UGJT_LevelManager::ShowTransitionWidget()
+{
+    if (!bUsesTransition) { return; }
+
+    bWaitingForTransitionAnimation = true;
+    TSubclassOf<UUserWidget> WidgetClass = GetTransitionWidgetClass();
+
+    if (WidgetClass)
+    {
+        if (!ActiveTransitionWidget)
+        {
+            ActiveTransitionWidget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
+            TransitionWidgetInterface = ActiveTransitionWidget;
+
+            if (!TransitionWidgetInterface)
+            {
+                UE_LOG(LogTemp, Error, TEXT("ActiveTransitionWidget does not implement IGJT_TransitionInterface!"));
+            }
+
+            TransitionWidgetInterface->GetOnFadeFinished().AddDynamic(this, &UGJT_LevelManager::HandleWidgetFadeFinished);
+        }
+
+        if (ActiveTransitionWidget && TransitionWidgetInterface) {
+            if (!ActiveTransitionWidget->IsInViewport())
+            {
+                ActiveTransitionWidget->AddToViewport(9999);
+            }
+
+            TransitionWidgetInterface->Execute_Show(TransitionWidgetInterface.GetObject());
+        }
+    }
+    else bWaitingForTransitionAnimation = false;
+}
+
+void UGJT_LevelManager::HideTransitionWidget()
+{
+    if (!bUsesTransition) { return; }
+
+    bWaitingForTransitionAnimation = true;
+
+    if (ActiveTransitionWidget && TransitionWidgetInterface)
+    {
+        TransitionWidgetInterface->Execute_Hide(TransitionWidgetInterface.GetObject());
+    }
+    else bWaitingForTransitionAnimation = false;
+}
+
+TSubclassOf<UUserWidget> UGJT_LevelManager::GetTransitionWidgetClass() const
 {
     const UGJT_DeveloperSettings* Settings = GetDefault<UGJT_DeveloperSettings>();
     return Settings ? Settings->TransitionWidgetClass.LoadSynchronous() : nullptr;

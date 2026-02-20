@@ -32,14 +32,11 @@ public:
         const UObject* WorldContextObject,
         const TSoftObjectPtr<UWorld>& LevelRef,
         ESceneUnloadType UnloadType,
-        //FLatentActionInfo LatentInfo,
         bool bUsesTransition = true
     );
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT")
     float GetCurrentTransitionProgress();
-
-    //float GetTransitionProgress()
 
     virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() = 0;
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() = 0;

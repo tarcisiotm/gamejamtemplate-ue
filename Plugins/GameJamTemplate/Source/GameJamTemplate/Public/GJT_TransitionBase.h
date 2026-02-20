@@ -20,13 +20,11 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
 	F_GJT_OnFadeFinished OnFadeFinished;
 
-	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void Show_Implementation() override;
 
-	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void Hide_Implementation() override;
 
-	virtual F_GJT_OnFadeFinished& GetOnF_GJT_OnFadeFinished() override { return OnFadeFinished; };
+	virtual F_GJT_OnFadeFinished& GetOnFadeFinished() override { return OnFadeFinished; };
 
 protected:
 	bool bHasInit = false;
@@ -41,10 +39,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
 	void InitializeWidget();
 
-	/// <summary>
-	/// Called from Blueprints
-	/// </summary>
-	/// <param name="fadeType"></param>
 	UFUNCTION(BlueprintCallable, Category = "GJT")
 	void BroadcastFadeFinished(EFadeType fadeType);
 };

@@ -2,13 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "Engine/LatentActionManager.h"
 #include "GJT_Types.h"
 #include "GJT_LevelManagerInterface.h"
 #include "Tickable.h"
 #include "GJT_LevelManager.generated.h"
 
-class UGJT_TransitionBase;
+class IGJT_TransitionInterface;
 class ULevelStreaming;
 
 UENUM()
@@ -31,12 +30,10 @@ class GAMEJAMTEMPLATE_API UGJT_LevelManager : public UGameInstanceSubsystem, pub
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-    // FTickableGameObject Interface
     virtual void Tick(float DeltaTime) override;
     virtual bool IsTickable() const override;
     virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UGJT_LevelManager, STATGROUP_Tickables); }
 
-    //UFUNCTION(BlueprintCallable, Category = "GJT | Navigation", meta = (Latent, LatentInfo = "LatentInfo", WorldContext = "WorldContextObject"))
     virtual void TransitionToLevel_Implementation(
         const UObject* WorldContextObject,
         const TSoftObjectPtr<UWorld>& LevelRef,
@@ -66,10 +63,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "GJT | Navigation", meta = (WorldContext = "WorldContextObject"))
     TSoftObjectPtr<UWorld> GetCurrentLevelReference(const UObject* WorldContextObject);
 
-
-
 protected:
-    // Internal Logic
     void UpdateCurrentLoadingStage(const UObject* WorldContextObject);
     void InternalLoad(const UObject* WorldContextObject);
     void InternalUnload(const UObject* WorldContextObject);
@@ -77,18 +71,16 @@ protected:
     void ShowTransitionWidget();
     void HideTransitionWidget();
 
-    // Callbacks
     UFUNCTION() void OnLevelShownCallback();
     UFUNCTION() void OnLevelUnloadedCallback();
 
-    // Helpers
     ULevelStreaming* GetCurrentLevelStreamingObject(const UObject* WorldContextObject);
-    TSubclassOf<UGJT_TransitionBase> GetTransitionWidgetClass() const;
+    TSubclassOf<UUserWidget> GetTransitionWidgetClass() const;
+
     UFUNCTION()
     void HandleWidgetFadeFinished(EFadeType FadeType);
     float GetStreamingProgress(TSoftObjectPtr<UWorld> LevelRef) const;
 
-    // State Data
     ETransitionStage CurrentStage;
     ESceneUnloadType CurrentUnloadType;
 
@@ -102,5 +94,8 @@ protected:
     TSoftObjectPtr<UWorld> LoadingLevel;
 
     UPROPERTY()
-    TObjectPtr<UGJT_TransitionBase> ActiveTransitionWidget;
+    TObjectPtr<UUserWidget> ActiveTransitionWidget;
+
+    UPROPERTY()
+    TScriptInterface<IGJT_TransitionInterface> TransitionWidgetInterface;
 };

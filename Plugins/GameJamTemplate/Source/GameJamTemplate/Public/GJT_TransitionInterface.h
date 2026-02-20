@@ -27,5 +27,5 @@ public:
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | Events")
     void Hide();
 
-    virtual F_GJT_OnFadeFinished& GetOnF_GJT_OnFadeFinished() = 0;
+    virtual F_GJT_OnFadeFinished& GetOnFadeFinished() = 0;
 };
