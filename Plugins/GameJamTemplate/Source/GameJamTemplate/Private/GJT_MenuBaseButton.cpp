@@ -38,6 +38,12 @@ void UGJT_MenuBaseButton::OnClicked_Implementation()
 {
 }
 
+UGJT_MenuBaseButton::UGJT_MenuBaseButton(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
+    bIsFocusable = false;
+}
+
 void UGJT_MenuBaseButton::OnInternalButtonClicked()
 {
     if (OnButtonClicked.IsBound())
@@ -60,4 +66,16 @@ void UGJT_MenuBaseButton::OnUnhovered()
     {
         Text->SetColorAndOpacity(FSlateColor(DefaultTextColor));
     }
+}
+
+void UGJT_MenuBaseButton::NativeOnAddedToFocusPath(const FFocusEvent& InFocusEvent)
+{
+    Super::NativeOnAddedToFocusPath(InFocusEvent);
+    OnHovered();
+}
+
+void UGJT_MenuBaseButton::NativeOnRemovedFromFocusPath(const FFocusEvent& InFocusEvent)
+{
+    Super::NativeOnRemovedFromFocusPath(InFocusEvent);
+    OnUnhovered();
 }

@@ -19,13 +19,15 @@ UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_MenuBaseButton : public UUserWidget
 {
     GENERATED_BODY()
+public:
+    UGJT_MenuBaseButton(const FObjectInitializer& ObjectInitializer);
 
 public:
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     FOnGJTButtonClicked OnButtonClicked;
 
 protected:
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     UButton* Button;
 
     UPROPERTY(meta = (BindWidget))
@@ -60,6 +62,9 @@ protected:
 
     UFUNCTION()
     void OnUnhovered();
+
+    virtual void NativeOnAddedToFocusPath(const FFocusEvent& InFocusEvent) override;
+    virtual void NativeOnRemovedFromFocusPath(const FFocusEvent& InFocusEvent) override;
 
     virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
