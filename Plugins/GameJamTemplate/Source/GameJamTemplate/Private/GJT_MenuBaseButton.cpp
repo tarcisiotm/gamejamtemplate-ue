@@ -4,6 +4,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/SizeBox.h"
+#include "Components/ScaleBoxSlot.h"
 
 void UGJT_MenuBaseButton::NativePreConstruct()
 {
@@ -19,6 +20,12 @@ void UGJT_MenuBaseButton::NativePreConstruct()
     {
         Text->SetText(ButtonText);
         Text->SetColorAndOpacity(FSlateColor(DefaultTextColor));
+
+        if (UScaleBoxSlot* TextSlot = Cast<UScaleBoxSlot>(Text->Slot))
+        {
+            TextSlot->SetHorizontalAlignment(TextHorizontalAlignment);
+            TextSlot->SetVerticalAlignment(TextVerticalAlignment);
+        }
     }
 }
 

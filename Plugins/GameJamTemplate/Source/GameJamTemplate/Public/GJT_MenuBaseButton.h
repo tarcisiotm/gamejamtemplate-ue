@@ -51,6 +51,12 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GJT | Appearance")
     float ButtonHeight = 40.f;
 
+    UPROPERTY(EditAnywhere, Category = "GJT | Layout")
+    TEnumAsByte<EHorizontalAlignment> TextHorizontalAlignment = HAlign_Right;
+
+    UPROPERTY(EditAnywhere, Category = "GJT | Layout")
+    TEnumAsByte<EVerticalAlignment> TextVerticalAlignment = VAlign_Center;
+
     UFUNCTION()
     void OnInternalButtonClicked();
 
