@@ -5,14 +5,27 @@
 
 void UGJT_PauseMenu::OnPauseStateChanged_Implementation(bool IsPaused)
 {
-	if (IsPaused) { HandleOnPaused_Implementation(); }
-	else { HandleOnUnpaused_Implementation(); }
+	if (IsPaused) { Show(); }
+	else { Hide(); }
 }
 
-void UGJT_PauseMenu::HandleOnPaused_Implementation()
+
+
+void UGJT_PauseMenu::Show_Implementation()
 {
+    SetVisibility(ESlateVisibility::Visible);
+
+    // do fade
 }
 
-void UGJT_PauseMenu::HandleOnUnpaused_Implementation()
+void UGJT_PauseMenu::Hide_Implementation()
 {
+
+}
+
+void UGJT_PauseMenu::HandleTransitionDone_Implementation(bool bIsPaused)
+{
+    if (bIsPaused) { return; }
+    
+    SetVisibility(ESlateVisibility::Hidden);
 }

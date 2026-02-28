@@ -21,8 +21,13 @@ class GAMEJAMTEMPLATE_API IGJT_PauseManagerInterface
 public:
     virtual FOnPauseStateChanged& GetOnPauseStateChangedEvent() = 0;
 
+    virtual bool IsPaused() const = 0;
+
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
-    void RequestPauseStateChange(bool bInPause);
+    bool RequestPauseStateChange(bool bInPause);
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
+    bool TogglePauseState();
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
     void SetCanPause(bool bInCanPause);

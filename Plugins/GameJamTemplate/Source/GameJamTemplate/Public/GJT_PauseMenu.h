@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "GJT_PauseInterface.h"
+#include "GJT_Types.h"
 
 #include "GJT_PauseMenu.generated.h"
 
@@ -20,9 +21,17 @@ public:
 	virtual void OnPauseStateChanged_Implementation(bool IsPaused) override;
 
 protected:
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
-	void HandleOnPaused();
+	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
+	F_GJT_OnFadeFinished OnFadeFinished;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
-	void HandleOnUnpaused();
+	void Show();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
+	void Hide();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
+	void HandleTransitionDone(bool bIsPaused);
+
+
 };

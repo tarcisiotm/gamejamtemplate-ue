@@ -48,7 +48,8 @@ void UGJT_MenuBaseButton::OnClicked_Implementation()
 UGJT_MenuBaseButton::UGJT_MenuBaseButton(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    bIsFocusable = false;
+    //bIsFocusable = false;
+    SetIsFocusable(false);
 }
 
 void UGJT_MenuBaseButton::OnInternalButtonClicked()

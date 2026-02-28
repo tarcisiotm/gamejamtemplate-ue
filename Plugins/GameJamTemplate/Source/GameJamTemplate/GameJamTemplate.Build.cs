@@ -31,6 +31,9 @@ public class GameJamTemplate : ModuleRules
                 "InputCore",
                 "UMG",
                 "DeveloperSettings",
+				"MetasoundEngine",
+				"MetasoundFrontend",
+                "EnhancedInput",
                 //"Slate",
                 //"SlateCore",
             }
