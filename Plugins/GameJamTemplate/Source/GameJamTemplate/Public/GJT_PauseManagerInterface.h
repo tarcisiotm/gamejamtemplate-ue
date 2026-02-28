@@ -6,7 +6,7 @@
 #include "UObject/Interface.h"
 #include "GJT_PauseManagerInterface.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnPauseStateChanged, bool);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPauseStateChanged, bool, bIsPaused);
 
 UINTERFACE(MinimalAPI)
 class UGJT_PauseManagerInterface : public UInterface

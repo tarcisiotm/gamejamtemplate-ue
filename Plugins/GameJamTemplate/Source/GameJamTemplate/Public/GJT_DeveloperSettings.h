@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "GJT_TransitionBase.h"
+#include "GJT_PauseMenu.h"
 #include "GJT_DeveloperSettings.generated.h"
 
 /**
@@ -19,5 +20,7 @@ public:
     /** The Blueprint Widget used for level transitions */
     UPROPERTY(Config, EditAnywhere, Category = "UI", meta = (MustImplement = "/Script/GameJamTemplate.GJT_TransitionInterface"))
     TSoftClassPtr<UGJT_TransitionBase> TransitionWidgetClass;
-	
+
+    UPROPERTY(Config, EditAnywhere, Category = "UI", meta = (MustImplement = "/Script/GameJamTemplate.GJT_PauseMenuInterface"))
+    TSoftClassPtr<UGJT_PauseMenu> PauseWidgetClass;
 };

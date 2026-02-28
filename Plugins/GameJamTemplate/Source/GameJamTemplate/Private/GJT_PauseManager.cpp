@@ -1,5 +1,10 @@
 // Copyright Tarcisio Games
 
+// Player controller detects pause request and forwards it here via the interface
+// Pause Manager processes the request, pauses/unpauses and forwards the request to the UI Manager
+// UI Manager shows/hides the pause menu
+//
+// TODO: Unpause when UI manager / pause menu wraps up its fade out?
 
 #include "GJT_PauseManager.h"
 
@@ -21,10 +26,12 @@ bool UGJT_PauseManager::RequestPauseStateChange_Implementation(bool bInPause)
 	if (bInPause && !bCanPause)
 	{
 #if WITH_EDITOR
-		UE_LOG(LogTemp, Display, TEXT("Pausing not allowed atm."));
+		UE_LOG(LogTemp, Warning, TEXT("Pausing not allowed atm."));
 #endif
 		return false;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("PAUSE STATE %s"), bIsPaused ? TEXT("true") : TEXT("false"));
 
 	bIsPaused = bInPause;
 

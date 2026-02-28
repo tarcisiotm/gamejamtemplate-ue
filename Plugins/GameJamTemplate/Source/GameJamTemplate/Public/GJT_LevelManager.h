@@ -74,7 +74,6 @@ protected:
     F_GJT_OnLevelTransition OnBeforeLevelLoad;
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnLevelTransition OnAfterLevelLoad;
-
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnFadeFinished OnTransitionFinished;
 
