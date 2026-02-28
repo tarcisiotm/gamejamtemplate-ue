@@ -5,6 +5,7 @@
 #include "GJT_SubsystemHelperLibrary.h"
 #include "GJT_DeveloperSettings.h"
 #include "GJT_GameplayTags.h"
+#include "GJT_WidgetInterface.h"
 
 void UGJT_UIManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -53,7 +54,7 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 {
 	TSubclassOf<UUserWidget> WidgetClass;
 	TObjectPtr<UUserWidget> Widget;
-	TScriptInterface<IGJT_TransitionInterface> WidgetInterface;
+	TScriptInterface<IGJT_WidgetInterface> WidgetInterface;
 
 	if (WidgetTag == GJT_Tags::UI_Menu_Pause)
 	{
@@ -67,30 +68,34 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 		//return;
 	}
 
-	if (WidgetClass)
+	if (!WidgetClass)
 	{
-		if (!Widget)
-		{
-			Widget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
-			WidgetInterface = Widget;
-
-			if (!WidgetInterface)
-			{
-				UE_LOG(LogTemp, Error, TEXT("ActiveTransitionWidget does not implement IGJT_TransitionInterface!"));
-			}
-
-			//TransitionWidgetInterface->GetOnFadeFinished().AddDynamic(this, &UGJT_LevelManager::HandleWidgetFadeFinished);
-		}
-
-		if (Widget && WidgetInterface) {
-			if (!Widget->IsInViewport())
-			{
-				Widget->AddToViewport(9999);
-			}
-
-			//TransitionWidgetInterface->Execute_Show(TransitionWidgetInterface.GetObject());
-		}
+		UE_LOG(LogTemp, Error, TEXT("Unable to fetch Widget Class of Tag: %s"), *WidgetTag.ToString());
+		return;
 	}
+
+	if (!Widget)
+	{
+		Widget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
+		WidgetInterface = Widget;
+
+		if (!WidgetInterface)
+		{
+			UE_LOG(LogTemp, Error, TEXT("ActiveTransitionWidget does not implement IGJT_TransitionInterface!"));
+		}
+
+		//WidgetInterface->GetOnVisibilityEvent().AddDynamic(this, &UGJT_UIManager::HandleWidgetFadeFinished);
+	}
+
+	if (Widget && WidgetInterface) {
+		if (!Widget->IsInViewport())
+		{
+			Widget->AddToViewport(9999);
+		}
+
+		//TransitionWidgetInterface->Execute_Show(TransitionWidgetInterface.GetObject());
+	}
+	
 }
 
 void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)

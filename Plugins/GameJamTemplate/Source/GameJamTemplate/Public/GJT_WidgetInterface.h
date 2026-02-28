@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-//#include "GJT_Types.h"
-//#include "NativeGameplayTags.h"
+#include "GJT_Types.h"
+#include "GameplayTagContainer.h"
 
 #include "GJT_WidgetInterface.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(F_GJT_OnVisibilityEvent, TScriptInterface<IGJT_WidgetInterface>, WidgetInterface, EWidgetVisibilityState, NewVisibility);
 
 UINTERFACE(MinimalAPI, Blueprintable)
 class UGJT_WidgetInterface : public UInterface { GENERATED_BODY() };
@@ -18,11 +20,13 @@ class IGJT_WidgetInterface
 
 public:
     UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
-    void Show();
+    void Show(const FGameplayTag WidgetTag);
 
     UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
-    void Hide();
+    void Hide(const FGameplayTag WidgetTag);
 
-    //virtual FOnWidgetAnimationFinished& GetOnOpenedFinishedDelegate() = 0;
-    //virtual FOnWidgetAnimationFinished& GetOnClosedFinishedDelegate() = 0;
+    virtual F_GJT_OnVisibilityEvent& GetOnVisibilityEvent() = 0;
+    
+    //virtual bool CanClose() = 0;
+
 };

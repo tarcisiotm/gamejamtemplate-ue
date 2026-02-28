@@ -16,23 +16,24 @@ class GAMEJAMTEMPLATE_API UGJT_WidgetBase : public UUserWidget, public IGJT_Widg
 {
 	GENERATED_BODY()
 
+protected:
+    virtual void NativeConstruct() override;
+
 public:
     // Interface Implementation
-    virtual void Show_Implementation() override;
-    virtual void Hide_Implementation() override;
+    virtual void Show_Implementation(const FGameplayTag WidgetTag) override;
+    virtual void Hide_Implementation(const FGameplayTag WidgetTag) override;
 
-    //virtual FOnWidgetAnimationFinished& GetOnOpenedFinishedDelegate() override { return OnOpenedFinished; }
-    //virtual FOnWidgetAnimationFinished& GetOnClosedFinishedDelegate() override { return OnClosedFinished; }
+    UFUNCTION(BlueprintNativeEvent, Category = "GJT")
+    void OnVisibilityChanged(EWidgetVisibilityState NewVisibilityType);
+
+    void BroadcastWidgetVisibilityEvent(EWidgetVisibilityState NewVisibilityType);
+
+    virtual F_GJT_OnVisibilityEvent& GetOnVisibilityEvent() override { return OnVisibilityEvent; };
 
 protected:
-    //UPROPERTY(BlueprintAssignable, Category = "GJT | UI")
-    //FOnWidgetAnimationFinished OnOpenedFinished;
+    TScriptInterface<IGJT_WidgetInterface> CachedInterfaceWrapper;
 
-    //UPROPERTY(BlueprintAssignable, Category = "GJT | UI")
-    //FOnWidgetAnimationFinished OnClosedFinished;
-
-    // Helper for Blueprints to call when their UMG animations finish
-    //UFUNCTION(BlueprintCallable, Category = "GJT | UI")
-    //void BroadcastOpenedFinished() { OnOpenedFinished.Broadcast(); }
-	
+    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
+    F_GJT_OnVisibilityEvent OnVisibilityEvent;
 };
