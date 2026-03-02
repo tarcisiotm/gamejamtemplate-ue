@@ -6,25 +6,27 @@
 #include "Engine/GameInstance.h"
 #include "GJT_GameInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class EGJT_GameState : uint8
+{
+    None,
+    MainMenu,
+    Loading,
+    Gameplay,
+    GameOver
+};
+
 UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_GameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 	
 public:
-    UFUNCTION(BlueprintCallable, Category = "GJT | Scene Management")
-    void TransitionToLevel(FName LevelName);
-
-    UFUNCTION(BlueprintCallable, Category = "GJT | Scene Management")
-    void ReportManagerReady(FName ManagerName);
+    void SetGameState(EGJT_GameState NewState) { CurrentState = NewState; }
 
 protected:
-    UPROPERTY(EditAnywhere, Category = "GJT | UI")
-    TSubclassOf<class UUserWidget> TransitionWidgetClass;
+    UPROPERTY(BlueprintReadOnly, Category = "GJT | State")
+    EGJT_GameState CurrentState = EGJT_GameState::MainMenu;
 
-    UPROPERTY()
-    class UUserWidget* ActiveTransitionWidget;
-
-    TSet<FName> PendingManagers;
-    void CheckAllManagersReady();
+  
 };

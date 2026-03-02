@@ -29,9 +29,6 @@ public:
     //virtual FOnPauseStateChanged& GetOnPauseStateChangedEvent() = 0;
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
-    void TogglePauseMenu(bool bInIsPaused, APlayerController* Instigator);
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
     void ShowWidget(FGameplayTag WidgetTag);
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")

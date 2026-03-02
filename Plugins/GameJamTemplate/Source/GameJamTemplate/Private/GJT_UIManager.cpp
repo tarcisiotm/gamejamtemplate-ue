@@ -65,26 +65,11 @@ void UGJT_UIManager::OnPauseStateChanged(bool bInIsPaused)
 {
 	if (bInIsPaused)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Show Pause menu!"));
 		ShowWidget_Implementation(GJT_Tags::UI_Menu_Pause);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hide Pause menu!"));
 		HideWidget_Implementation(GJT_Tags::UI_Menu_Pause);
-
-	}
-}
-
-void UGJT_UIManager::TogglePauseMenu_Implementation(bool bInIsPaused, APlayerController* Instigator)
-{
-	if (bInIsPaused)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Show Pause menu!"));
-	}
-	else 
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Hide Pause menu!"));
 	}
 }
 
@@ -129,8 +114,6 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 	UE_LOG(LogTemp, Warning, TEXT("Show Widget"));
 	TObjectPtr<UUserWidget> Widget = GetOrCreateWidgetByTag(WidgetTag);
 
-	//TScriptInterface<IGJT_WidgetInterface> WidgetInterface = Widget;
-
 	if (!Widget || !Widget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))
 	{
 		return;
@@ -142,68 +125,18 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 		Widget->AddToViewport(9999);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Show Execute_Show Widget"));
-	//IGJT_WidgetInterface::Execute_Show(Widget.Get());
-	//IGJT_WidgetInterface::Execute_Show(WidgetInterface.GetObject());
-	//WidgetInterface->Execute_Show(WidgetInterface.GetObject());
 	IGJT_WidgetInterface::Execute_Show(Widget);
 	
 }
 
 void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)
 {
-	UE_LOG(LogTemp, Warning, TEXT("HideWidget_Implementation"));
-
 	TObjectPtr<UUserWidget> Widget = GetOrCreateWidgetByTag(WidgetTag);
 
 	if (!Widget || !Widget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Execute_Hide"));
 
 	IGJT_WidgetInterface::Execute_Hide(Widget);
 }
-
-// TODO: Move to Developer settings?
-TSubclassOf<UUserWidget> UGJT_UIManager::GetPauseMenuWidgetClass() const
-{
-	const UGJT_DeveloperSettings* Settings = GetDefault<UGJT_DeveloperSettings>();
-	return Settings ? Settings->PauseWidgetClass.LoadSynchronous() : nullptr;
-}
-
-//void UGJT_UIManager::ShowWidget()
-//{
-	/*
-	if (!bUsesTransition) { return; }
-
-	bWaitingForTransitionAnimation = true;
-	TSubclassOf<UUserWidget> WidgetClass = GetTransitionWidgetClass();
-
-	if (WidgetClass)
-	{
-		if (!ActiveTransitionWidget)
-		{
-			ActiveTransitionWidget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
-			TransitionWidgetInterface = ActiveTransitionWidget;
-
-			if (!TransitionWidgetInterface)
-			{
-				UE_LOG(LogTemp, Error, TEXT("ActiveTransitionWidget does not implement IGJT_TransitionInterface!"));
-			}
-
-			TransitionWidgetInterface->GetOnFadeFinished().AddDynamic(this, &UGJT_LevelManager::HandleWidgetFadeFinished);
-		}
-
-		if (ActiveTransitionWidget && TransitionWidgetInterface) {
-			if (!ActiveTransitionWidget->IsInViewport())
-			{
-				ActiveTransitionWidget->AddToViewport(9999);
-			}
-
-			TransitionWidgetInterface->Execute_Show(TransitionWidgetInterface.GetObject());
-		}
-	}
-	else bWaitingForTransitionAnimation = false;
-	*/
-//}

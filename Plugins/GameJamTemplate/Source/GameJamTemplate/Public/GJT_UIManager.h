@@ -23,7 +23,6 @@ class GAMEJAMTEMPLATE_API UGJT_UIManager : public UGameInstanceSubsystem, public
 public:
 	void Initialize(FSubsystemCollectionBase& Collection) override;
 
-	void TogglePauseMenu_Implementation(bool bInIsPaused, APlayerController* Instigator) override;
 	void ShowWidget_Implementation(FGameplayTag WidgetTag) override;
 	void HideWidget_Implementation(FGameplayTag WidgetTag) override;
 
@@ -45,8 +44,6 @@ protected:
 
 	UPROPERTY()
 	TScriptInterface<IGJT_PauseManagerInterface> PauseWidgetInterface;
-
-	TSubclassOf<UUserWidget> GetPauseMenuWidgetClass() const;
 
 	UDataTable* TagToWidgetDataTable;
 
