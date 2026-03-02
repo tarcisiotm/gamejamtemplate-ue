@@ -4,7 +4,24 @@
 #include "GJT_SubsystemHelperLibrary.h"
 #include "GJT_LevelManager.h" 
 #include "GJT_PauseManager.h" 
+#include "GJT_GameInstance.h" 
 #include "GJT_UIManager.h" 
+
+TScriptInterface<IGJT_GameInstanceInterface> UGJT_SubsystemHelperLibrary::GetGameInstanceInterface(const UObject* WorldContextObject)
+{
+    if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
+    {
+        if (UGameInstance* GameInstance = World->GetGameInstance())
+        {
+            if (GameInstance->GetClass()->ImplementsInterface(UGJT_GameInstanceInterface::StaticClass()))
+            {
+                return TScriptInterface<IGJT_GameInstanceInterface>(GameInstance);
+            }
+        }
+    }
+
+    return nullptr;
+}
 
 TScriptInterface<IGJT_LevelManagerInterface> UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(const UObject* WorldContextObject)
 {

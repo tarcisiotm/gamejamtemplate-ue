@@ -63,14 +63,8 @@ void UGJT_UIManager::InitializeTagToWidgetMap()
 
 void UGJT_UIManager::OnPauseStateChanged(bool bInIsPaused)
 {
-	if (bInIsPaused)
-	{
-		ShowWidget_Implementation(GJT_Tags::UI_Menu_Pause);
-	}
-	else
-	{
-		HideWidget_Implementation(GJT_Tags::UI_Menu_Pause);
-	}
+	if (bInIsPaused) { ShowWidget_Implementation(GJT_Tags::UI_Menu_Pause); }
+	else { HideWidget_Implementation(GJT_Tags::UI_Menu_Pause); }
 }
 
 TSubclassOf<UUserWidget> UGJT_UIManager::GetWidgetClassByTag(FGameplayTag WidgetTag)
@@ -91,10 +85,7 @@ TObjectPtr<UUserWidget> UGJT_UIManager::GetOrCreateWidgetByTag(FGameplayTag Widg
 	{
 		TObjectPtr<UUserWidget>* FoundWidgetPtr = TagToSpawnedWidgetMap.Find(WidgetTag);
 
-		if (FoundWidgetPtr)
-		{
-			return *FoundWidgetPtr;
-		}
+		if (FoundWidgetPtr) { return *FoundWidgetPtr; }
 	}
 
 	// Create it!

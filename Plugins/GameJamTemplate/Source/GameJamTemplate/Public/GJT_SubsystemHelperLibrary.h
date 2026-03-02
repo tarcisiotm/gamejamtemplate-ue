@@ -5,6 +5,8 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+
+#include "GJT_GameInstanceInterface.h"
 #include "GJT_LevelManagerInterface.h"
 #include "GJT_PauseManagerInterface.h"
 #include "GJT_UIManagerInterface.h"
@@ -17,6 +19,9 @@ class GAMEJAMTEMPLATE_API UGJT_SubsystemHelperLibrary : public UBlueprintFunctio
     GENERATED_BODY()
 
 public:
+    UFUNCTION(BlueprintPure, BlueprintCallable, Category = "GJT | Subsystems", meta = (WorldContext = "WorldContextObject"))
+    static TScriptInterface<IGJT_GameInstanceInterface> GetGameInstanceInterface(const UObject* WorldContextObject);
+
     UFUNCTION(BlueprintPure, BlueprintCallable, Category = "GJT | Subsystems", meta = (WorldContext = "WorldContextObject"))
     static TScriptInterface<IGJT_LevelManagerInterface> GetLevelManagerInterface(const UObject* WorldContextObject);
 
