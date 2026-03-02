@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "GJT_Types.h"
-#include "GameplayTagContainer.h"
+//#include "GameplayTagContainer.h"
 
 #include "GJT_WidgetInterface.generated.h"
 
@@ -20,10 +20,10 @@ class IGJT_WidgetInterface
 
 public:
     UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
-    void Show(const FGameplayTag WidgetTag);
+    void Show();
 
     UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
-    void Hide(const FGameplayTag WidgetTag);
+    void Hide();
 
     virtual F_GJT_OnVisibilityEvent& GetOnVisibilityEvent() = 0;
     

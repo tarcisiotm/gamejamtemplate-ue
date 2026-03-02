@@ -13,7 +13,7 @@
 class FGameplayTags;
 
 /**
- * 
+ * TODO write about the data setup and documentation here
  */
 UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_UIManager : public UGameInstanceSubsystem, public IGJT_UIManagerInterface
@@ -31,6 +31,12 @@ public:
 protected:
 	void HandleWorldBeginPlay(UWorld* World, const UWorld::InitializationValues IValues);
 
+	void InitializeTagToWidgetMap();
+
+	TSubclassOf<UUserWidget> GetWidgetClassByTag(FGameplayTag WidgetTag);
+
+	TObjectPtr<UUserWidget> GetOrCreateWidgetByTag(FGameplayTag WidgetTag);
+
 	UFUNCTION()
 	void OnPauseStateChanged(bool bInIsPaused);
 
@@ -41,5 +47,12 @@ protected:
 	TScriptInterface<IGJT_PauseManagerInterface> PauseWidgetInterface;
 
 	TSubclassOf<UUserWidget> GetPauseMenuWidgetClass() const;
+
+	UDataTable* TagToWidgetDataTable;
+
+	UPROPERTY()
+	TMap<FGameplayTag, TSubclassOf<UUserWidget>> TagToWidgetMap;
+
+	TMap<FGameplayTag, TObjectPtr<UUserWidget>> TagToSpawnedWidgetMap;
 
 };

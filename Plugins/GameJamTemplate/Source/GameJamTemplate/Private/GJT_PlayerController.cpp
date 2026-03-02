@@ -12,16 +12,15 @@
 void AGJT_PlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
-    UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent"));
+    //UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent"));
 
     if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
     {
-        UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent2"));
+        //UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent2"));
 
         if (PauseInputAction)
         {
-            UE_LOG(LogTemp, Warning, TEXT("SetupInputComponent3"));
-
+            UE_LOG(LogTemp, Warning, TEXT("AGJT_PlayerController Binding pause"));
             EnhancedInputComponent->BindAction(PauseInputAction, ETriggerEvent::Triggered, this, &AGJT_PlayerController::HandlePauseRequest);
         }
     }
@@ -63,13 +62,13 @@ void AGJT_PlayerController::HandlePauseRequest(const FInputActionValue& Value)
     {
         UObject* PauseObj = PauseInterface.GetObject();
 
-        UE_LOG(LogTemp, Warning, TEXT("HandlePauseRequest3"));
+        UE_LOG(LogTemp, Warning, TEXT("Issued pause command?"));
 
         bool bDidIssueCommand = IGJT_PauseManagerInterface::Execute_TogglePauseState(PauseObj);
 
         if (bDidIssueCommand)
         {
-            UE_LOG(LogTemp, Warning, TEXT("HandlePauseRequest4"));
+            UE_LOG(LogTemp, Warning, TEXT("Issued pause command!"));
 
             bool bCurrentPauseState = PauseInterface->IsPaused();
             UpdateInputMode(bCurrentPauseState);

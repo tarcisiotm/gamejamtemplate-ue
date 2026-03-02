@@ -21,8 +21,8 @@ protected:
 
 public:
     // Interface Implementation
-    virtual void Show_Implementation(const FGameplayTag WidgetTag) override;
-    virtual void Hide_Implementation(const FGameplayTag WidgetTag) override;
+    virtual void Show_Implementation() override;
+    virtual void Hide_Implementation() override;
 
     UFUNCTION(BlueprintNativeEvent, Category = "GJT")
     void OnVisibilityChanged(EWidgetVisibilityState NewVisibilityType);
@@ -34,6 +34,17 @@ public:
 protected:
     TScriptInterface<IGJT_WidgetInterface> CachedInterfaceWrapper;
 
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    class UWidgetAnimation* ShowWidgetAnimation;
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    class UWidgetAnimation* HideWidgetAnimation;
+
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnVisibilityEvent OnVisibilityEvent;
+
+    UFUNCTION(BlueprintNativeEvent, Category = "GJT | Events")
+    void OnShowAnimationFinished();
+
+    UFUNCTION(BlueprintNativeEvent, Category = "GJT | Events")
+    void OnHideAnimationFinished();
 };

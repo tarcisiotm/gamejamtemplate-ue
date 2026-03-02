@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "GJT_PauseInterface.h"
 #include "GJT_Types.h"
+#include "GJT_WidgetBase.h"
 
 #include "GJT_PauseMenu.generated.h"
 
@@ -13,7 +14,7 @@
  * 
  */
 UCLASS()
-class GAMEJAMTEMPLATE_API UGJT_PauseMenu : public UUserWidget, public IGJT_PauseInterface
+class GAMEJAMTEMPLATE_API UGJT_PauseMenu : public UGJT_WidgetBase, public IGJT_PauseInterface
 {
 	GENERATED_BODY()
 	
@@ -24,11 +25,9 @@ protected:
 	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
 	F_GJT_OnFadeFinished OnFadeFinished;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
-	void Show();
+	virtual void Show_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
-	void Hide();
+	virtual void Hide_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
 	void HandleTransitionDone(bool bIsPaused);

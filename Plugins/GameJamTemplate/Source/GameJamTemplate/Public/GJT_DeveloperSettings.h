@@ -23,4 +23,7 @@ public:
 
     UPROPERTY(Config, EditAnywhere, Category = "UI", meta = (MustImplement = "/Script/GameJamTemplate.GJT_PauseMenuInterface"))
     TSoftClassPtr<UGJT_PauseMenu> PauseWidgetClass;
+
+    UPROPERTY(Config, EditAnywhere, Category = "UI")
+    FSoftObjectPath TagToWidgetDataTablePath;
 };
