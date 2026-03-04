@@ -17,8 +17,10 @@ class GAMEJAMTEMPLATE_API IGJT_GameInstanceInterface
 
 public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | State")
-    void SetGameState(EGJT_GameState NewState);
+    void SetGameContext(EGJT_GameContext NewGameContext);
 
-    virtual EGJT_GameState GetGameState() const = 0;
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT | GameState")
+    EGJT_GameContext GetGameContext() const;
 
+    // on context changed event?
 };

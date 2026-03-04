@@ -25,5 +25,5 @@ public:
     TSoftClassPtr<UGJT_PauseMenu> PauseWidgetClass;
 
     UPROPERTY(Config, EditAnywhere, Category = "UI")
-    FSoftObjectPath TagToWidgetDataTablePath;
+    FSoftObjectPath WidgetConfigAssetPath;
 };

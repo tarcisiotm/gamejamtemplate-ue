@@ -2,67 +2,83 @@
 
 
 #include "GJT_WidgetBase.h"
+#include "Animation/WidgetAnimation.h"
+#include "Blueprint/WidgetBlueprintGeneratedClass.h"
+#include "MovieScene.h"
 
 void UGJT_WidgetBase::NativeConstruct()
 {
     Super::NativeConstruct();
 
     CachedInterfaceWrapper.SetObject(this);
-    CachedInterfaceWrapper.SetInterface(Cast<IGJT_WidgetInterface>(this));
+    CachedInterfaceWrapper.SetInterface(Cast<IGJT_WidgetInterface>(this)); 
+    
+    ShowWidgetAnimationPtr = FindAnimation(FName("ShowWidgetAnimation"));
+    HideWidgetAnimationPtr = FindAnimation(FName("HideWidgetAnimation"));
 
-    if (ShowWidgetAnimation)
+    if (ShowWidgetAnimationPtr)
     {
         FWidgetAnimationDynamicEvent ShowAnimDelegate;
         ShowAnimDelegate.BindDynamic(this, &UGJT_WidgetBase::OnShowAnimationFinished);
 
-        BindToAnimationFinished(ShowWidgetAnimation, ShowAnimDelegate);
+        BindToAnimationFinished(ShowWidgetAnimationPtr, ShowAnimDelegate);
     }
 
-    if (HideWidgetAnimation)
+    if (HideWidgetAnimationPtr)
     {
         FWidgetAnimationDynamicEvent HideAnimDelegate;
         HideAnimDelegate.BindDynamic(this, &UGJT_WidgetBase::OnShowAnimationFinished);
 
-        BindToAnimationFinished(HideWidgetAnimation, HideAnimDelegate);
+        BindToAnimationFinished(HideWidgetAnimationPtr, HideAnimDelegate);
     }
 
-    if (!ShowWidgetAnimation || !HideWidgetAnimation)
+    if (!ShowWidgetAnimationPtr || !HideWidgetAnimationPtr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Show or Hide Animation missing. Please make sure this is intended!"));
+        UE_LOG(LogTemp, Warning, TEXT("Optional Show and/or Hide Animation missing. Please make sure this is intended!"));
     }
+}
+
+UWidgetAnimation* UGJT_WidgetBase::FindAnimation(FName AnimName) const
+{
+    UWidgetBlueprintGeneratedClass* WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(GetClass());
+    if (!WidgetClass) return nullptr;
+
+    for (UWidgetAnimation* Anim : WidgetClass->Animations)
+    {
+        if (Anim && Anim->GetMovieScene())
+        {
+            if (Anim->GetMovieScene()->GetFName() == AnimName)
+            {
+                return Anim;
+            }
+        }
+    }
+    return nullptr;
 }
 
 void UGJT_WidgetBase::Show_Implementation()
 {
-    //UE_LOG(LogTemp, Warning, TEXT("Show Implementation!"));
-    if (ShowWidgetAnimation)
+    if (ShowWidgetAnimationPtr)
     {
-        //UE_LOG(LogTemp, Warning, TEXT("Play animation!"));
-        PlayAnimation(ShowWidgetAnimation);
+        PlayAnimation(ShowWidgetAnimationPtr);
         SetVisibility(ESlateVisibility::Visible);
-
         //BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::FadingIn);
     }else
     {
-       //UE_LOG(LogTemp, Warning, TEXT("No Show for No show animation!"));
+       SetVisibility(ESlateVisibility::Visible);
     }
 }
 
 void UGJT_WidgetBase::Hide_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("widget base Hide Implementation!"));
-
-    if (HideWidgetAnimation)
+    if (HideWidgetAnimationPtr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("widget base Hide animation!"));
-
-        PlayAnimation(HideWidgetAnimation);
-
+        PlayAnimation(HideWidgetAnimationPtr);
         //BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::FadingIn);
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("No Show for No show animation!"));
+        SetVisibility(ESlateVisibility::Hidden);
     }
 }
 

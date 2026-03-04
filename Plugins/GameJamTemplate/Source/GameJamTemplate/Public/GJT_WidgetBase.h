@@ -34,10 +34,14 @@ public:
 protected:
     TScriptInterface<IGJT_WidgetInterface> CachedInterfaceWrapper;
 
-    UPROPERTY(meta = (BindWidgetAnim), Transient)
-    class UWidgetAnimation* ShowWidgetAnimation;
-    UPROPERTY(meta = (BindWidgetAnim), Transient)
-    class UWidgetAnimation* HideWidgetAnimation;
+    UWidgetAnimation* FindAnimation(FName AnimName) const;
+
+    UPROPERTY(BlueprintReadOnly, Transient)
+    class UWidgetAnimation* ShowWidgetAnimationPtr;
+    //UPROPERTY(meta = (BindWidgetAnim, OptionalWidgetAnim), Transient)
+    UPROPERTY(BlueprintReadOnly, Transient)
+
+    class UWidgetAnimation* HideWidgetAnimationPtr;
 
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnVisibilityEvent OnVisibilityEvent;

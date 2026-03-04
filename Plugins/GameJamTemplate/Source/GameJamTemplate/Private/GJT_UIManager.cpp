@@ -5,7 +5,6 @@
 #include "GJT_SubsystemHelperLibrary.h"
 #include "GJT_DeveloperSettings.h"
 #include "GJT_GameplayTags.h"
-#include "GJT_TagToWidgetMap.h"
 #include "GJT_WidgetInterface.h"
 
 void UGJT_UIManager::Initialize(FSubsystemCollectionBase& Collection)
@@ -29,35 +28,23 @@ void UGJT_UIManager::HandleWorldBeginPlay(UWorld* World, const UWorld::Initializ
 {
 	auto pauseManagerInterface = UGJT_SubsystemHelperLibrary::GetPauseManagerInterface(World);
 	pauseManagerInterface->GetOnPauseStateChangedEvent().AddDynamic(this, &UGJT_UIManager::OnPauseStateChanged);
+
+	GameInstanceInterface = UGJT_SubsystemHelperLibrary::GetGameInstanceInterface(this);
 }
 
 void UGJT_UIManager::InitializeTagToWidgetMap()
 {
 	const UGJT_DeveloperSettings* Settings = GetDefault<UGJT_DeveloperSettings>();
 
-	if (Settings && !Settings->TagToWidgetDataTablePath.IsNull())
+	if (Settings && !Settings->WidgetConfigAssetPath.IsNull())
 	{
-		TagToWidgetDataTable = Cast<UDataTable>(Settings->TagToWidgetDataTablePath.TryLoad());
+		WidgetConfig = Cast<UGJT_WidgetConfig>(Settings->WidgetConfigAssetPath.TryLoad());
 	}
 
-	if (!TagToWidgetDataTable)
+	if (!WidgetConfig)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UI Manager: WidgetDataTable is NULL!"));
 		return;
-	}
-
-	TagToWidgetMap.Empty();
-
-	static const FString ContextString(TEXT("Widget Mapping Context"));
-	TArray<FGJT_TagToWidgetMap*> Rows;
-	TagToWidgetDataTable->GetAllRows<FGJT_TagToWidgetMap>(ContextString, Rows);
-
-	for (FGJT_TagToWidgetMap* Row : Rows)
-	{
-		if (Row && Row->WidgetTag.IsValid() && Row->WidgetClass)
-		{
-			TagToWidgetMap.Add(Row->WidgetTag, Row->WidgetClass);
-		}
 	}
 }
 
@@ -69,10 +56,14 @@ void UGJT_UIManager::OnPauseStateChanged(bool bInIsPaused)
 
 TSubclassOf<UUserWidget> UGJT_UIManager::GetWidgetClassByTag(FGameplayTag WidgetTag)
 {
-	if (TSubclassOf<UUserWidget>* FoundClass = TagToWidgetMap.Find(WidgetTag))
-	{
-		return *FoundClass;
+	if (!WidgetConfig) { 
+		UE_LOG(LogTemp, Warning, TEXT("No Widget Config. This is probably unintended!"));
+		return nullptr; 
 	}
+
+	const FGJT_WidgetData* FoundData = WidgetConfig->WidgetMap.Find(WidgetTag);
+
+	if (FoundData) { return FoundData->WidgetClass; }
 
 	UE_LOG(LogTemp, Warning, TEXT("UI Manager: No class found for tag %s"), *WidgetTag.ToString());
 	return nullptr;
@@ -102,7 +93,23 @@ TObjectPtr<UUserWidget> UGJT_UIManager::GetOrCreateWidgetByTag(FGameplayTag Widg
 
 void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Show Widget"));
+	auto GameContext = IGJT_GameInstanceInterface::Execute_GetGameContext(GameInstanceInterface.GetObject());
+
+	EGJT_GameContext CurrentState =
+		static_cast<EGJT_GameContext>(static_cast<uint8>(GameContext));
+
+	const FGJT_WidgetData* Data = WidgetConfig->WidgetMap.Find(WidgetTag);
+
+	if (Data)
+	{
+		EGJT_GameContext AllowedMask = static_cast<EGJT_GameContext>(Data->AllowedContexts);
+
+		bool bIsAllowed = EnumHasAnyFlags(AllowedMask, CurrentState);
+		//UE_LOG(LogTemp, Warning, TEXT("UI Check | %s | Result: %s"), *WidgetTag.ToString(), bIsAllowed ? TEXT("ALLOWED") : TEXT("BLOCKED"));
+
+		if (!bIsAllowed) { return; }
+	}
+
 	TObjectPtr<UUserWidget> Widget = GetOrCreateWidgetByTag(WidgetTag);
 
 	if (!Widget || !Widget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))
@@ -117,7 +124,6 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 	}
 
 	IGJT_WidgetInterface::Execute_Show(Widget);
-	
 }
 
 void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)

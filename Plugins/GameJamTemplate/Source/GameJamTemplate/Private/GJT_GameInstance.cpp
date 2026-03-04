@@ -5,3 +5,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
+EGJT_GameContext UGJT_GameInstance::GetGameContext_Implementation() const
+{
+    return CurrentGameContext;
+}

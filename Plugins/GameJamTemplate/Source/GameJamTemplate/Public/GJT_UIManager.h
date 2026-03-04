@@ -7,10 +7,12 @@
 #include "GJT_UIManagerInterface.h"
 #include "GJT_PauseManagerInterface.h"
 #include "GJT_TransitionInterface.h"
+#include "GJT_WidgetConfig.h"
 
 #include "GJT_UIManager.generated.h"
 
 class FGameplayTags;
+class IGJT_GameInstanceInterface;
 
 /**
  * TODO write about the data setup and documentation here
@@ -45,11 +47,16 @@ protected:
 	UPROPERTY()
 	TScriptInterface<IGJT_PauseManagerInterface> PauseWidgetInterface;
 
-	UDataTable* TagToWidgetDataTable;
+	UPROPERTY()
+	TObjectPtr<UGJT_WidgetConfig> WidgetConfig;
 
 	UPROPERTY()
 	TMap<FGameplayTag, TSubclassOf<UUserWidget>> TagToWidgetMap;
 
+	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UUserWidget>> TagToSpawnedWidgetMap;
+
+	UPROPERTY()
+	TScriptInterface<IGJT_GameInstanceInterface> GameInstanceInterface;
 
 };

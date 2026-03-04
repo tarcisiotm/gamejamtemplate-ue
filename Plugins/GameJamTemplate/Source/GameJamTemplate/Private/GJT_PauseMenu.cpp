@@ -10,7 +10,6 @@ void UGJT_PauseMenu::OnPauseStateChanged_Implementation(bool IsPaused)
 }
 
 
-
 void UGJT_PauseMenu::Show_Implementation()
 {
     Super::Show_Implementation();

@@ -14,14 +14,13 @@ class GAMEJAMTEMPLATE_API UGJT_GameInstance : public UGameInstance, public IGJT_
 	GENERATED_BODY()
 	
 public:
-    void SetGameState_Implementation(EGJT_GameState NewState) override { CurrentState = NewState; };
+    void SetGameContext_Implementation(EGJT_GameContext NewGameContext) override { CurrentGameContext = NewGameContext; };
 
-    UFUNCTION(BlueprintCallable, Category = "GJT | State")
-    EGJT_GameState GetGameState() const override final { return CurrentState; };
+    //UFUNCTION(BlueprintCallable, Category = "GJT | State")
+   // EGJT_GameContext GetGameState() const override final { return CurrentState; };
+    virtual EGJT_GameContext GetGameContext_Implementation() const override;
 
 protected:
     UPROPERTY(BlueprintReadOnly, Category = "GJT | State")
-    EGJT_GameState CurrentState = EGJT_GameState::MainMenu;
-
-  
+    EGJT_GameContext CurrentGameContext = EGJT_GameContext::MainMenu;
 };
