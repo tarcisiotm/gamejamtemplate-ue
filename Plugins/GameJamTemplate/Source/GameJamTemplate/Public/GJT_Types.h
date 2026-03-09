@@ -18,9 +18,9 @@ UENUM(BlueprintType)
 enum class EWidgetVisibilityState : uint8
 {
     None,
-    StartedFadingIn UMETA(DisplayName = "Fading In"),
+    FadingIn UMETA(DisplayName = "Fading In"),
     Visible UMETA(DisplayName = "Visible"),
-    StartedFadingOut  UMETA(DisplayName = "Fading Out"),
+    FadingOut  UMETA(DisplayName = "Fading Out"),
     Hidden UMETA(DisplayName = "Hidden"),
 };
 

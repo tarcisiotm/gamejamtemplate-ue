@@ -13,9 +13,12 @@
 
 class FGameplayTags;
 class IGJT_GameInstanceInterface;
+class IGJT_WidgetInterface;
 
 /**
- * TODO write about the data setup and documentation here
+ * The UI Manager exists for the whole lifecycle of the game.
+ * Show/Hide Widget will try to automatically play the default animations.
+ * It will look at the widget config to know the context in which it can show the requested widget.
  */
 UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_UIManager : public UGameInstanceSubsystem, public IGJT_UIManagerInterface
@@ -27,9 +30,15 @@ public:
 
 	void ShowWidget_Implementation(FGameplayTag WidgetTag) override;
 	void HideWidget_Implementation(FGameplayTag WidgetTag) override;
+	void ProcessCancelRequest_Implementation() override;
+	UFUNCTION(BlueprintCallable, Category = "GJT | UI")
+	virtual FGameplayTag GetTopMostWidgetTag() const override final;
 
+	virtual FOnTopMostWidgetChanged& GetOnTopMostWidgetChanged() override { return OnTopMostWidgetChanged; }
 
 protected:
+	FOnTopMostWidgetChanged OnTopMostWidgetChanged;
+
 	void HandleWorldBeginPlay(UWorld* World, const UWorld::InitializationValues IValues);
 
 	void InitializeTagToWidgetMap();
@@ -38,8 +47,16 @@ protected:
 
 	TObjectPtr<UUserWidget> GetOrCreateWidgetByTag(FGameplayTag WidgetTag);
 
+	void BroadcastTopMostWidgetChanged();
+
 	UFUNCTION()
 	void OnPauseStateChanged(bool bInIsPaused);
+
+	UFUNCTION()
+	void OnVisibilityEvent(TScriptInterface<IGJT_WidgetInterface> WidgetInterface, EWidgetVisibilityState NewVisibility);
+
+	UPROPERTY()
+	TArray<TObjectPtr<UUserWidget>> WidgetStack;
 
 	UPROPERTY()
 	TObjectPtr<UUserWidget> PauseMenuWidget;
@@ -58,5 +75,4 @@ protected:
 
 	UPROPERTY()
 	TScriptInterface<IGJT_GameInstanceInterface> GameInstanceInterface;
-
 };

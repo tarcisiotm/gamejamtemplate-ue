@@ -6,8 +6,10 @@
 #include "UObject/Interface.h"
 #include "GJT_Types.h"
 #include "GameplayTagContainer.h"
-
+#include "Blueprint/UserWidget.h"
 #include "GJT_UIManagerInterface.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnTopMostWidgetChanged, UUserWidget*);
 
 class APlayerController;
 
@@ -17,7 +19,6 @@ class UGJT_UIManagerInterface : public UInterface
     GENERATED_BODY()
 };
 
-//DECLARE_MULTICAST_DELEGATE_OneParam(FOnPauseStateChanged, bool);
 // on widget completely shown
 // on widget completely hidden
 
@@ -27,10 +28,17 @@ class GAMEJAMTEMPLATE_API IGJT_UIManagerInterface
 
 public:
     //virtual FOnPauseStateChanged& GetOnPauseStateChangedEvent() = 0;
+    virtual FOnTopMostWidgetChanged& GetOnTopMostWidgetChanged() = 0;
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
     void ShowWidget(FGameplayTag WidgetTag);
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
     void HideWidget(FGameplayTag WidgetTag);
+
+    // todo pass who requested the cancel...
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "GJT")
+    void ProcessCancelRequest();
+
+    virtual FGameplayTag GetTopMostWidgetTag() const = 0;
 };

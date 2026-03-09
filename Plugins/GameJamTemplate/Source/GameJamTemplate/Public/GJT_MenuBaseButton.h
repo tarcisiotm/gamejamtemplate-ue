@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "GJT_WidgetFocusInterface.h"
+
 #include "GJT_MenuBaseButton.generated.h"
 
 class UButton;
@@ -16,7 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGJTButtonClicked);
  *
  */
 UCLASS()
-class GAMEJAMTEMPLATE_API UGJT_MenuBaseButton : public UUserWidget
+class GAMEJAMTEMPLATE_API UGJT_MenuBaseButton : public UUserWidget, public IGJT_WidgetFocusInterface
 {
     GENERATED_BODY()
 public:

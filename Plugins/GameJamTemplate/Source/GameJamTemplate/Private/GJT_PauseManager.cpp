@@ -31,6 +31,12 @@ bool UGJT_PauseManager::RequestPauseStateChange_Implementation(bool bInPause)
 		return false;
 	}
 
+	if (bIsPaused && !bInPause)
+	{
+		// if pause menu is on. we are requesting to dismiss it, and there is another screen over it
+		// return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("PAUSE STATE %s"), bIsPaused ? TEXT("true") : TEXT("false"));
 
 	bIsPaused = bInPause;

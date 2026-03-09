@@ -35,8 +35,8 @@ public class GameJamTemplate : ModuleRules
 				"MetasoundFrontend",
                 "EnhancedInput",
                 "GameplayTags",
-                //"Slate",
-                //"SlateCore",
+                "Slate",
+                "SlateCore",
             }
             );
 

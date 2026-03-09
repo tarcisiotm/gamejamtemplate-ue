@@ -25,6 +25,9 @@ public:
     UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
     void Hide();
 
+    UFUNCTION(BlueprintNativeEvent, Category = "GJT | UI")
+    void OnCancelRequested();
+
     virtual F_GJT_OnVisibilityEvent& GetOnVisibilityEvent() = 0;
     
     //virtual bool CanClose() = 0;

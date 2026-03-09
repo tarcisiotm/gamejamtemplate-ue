@@ -1,53 +1,52 @@
 // Copyright Tarcisio Games
 
-
 #include "GJT_WidgetBase.h"
 #include "Animation/WidgetAnimation.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "MovieScene.h"
+#include "Components/Widget.h"
+#include "GameFramework/PlayerController.h"
 
 void UGJT_WidgetBase::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    // Setup interface wrapper
     CachedInterfaceWrapper.SetObject(this);
-    CachedInterfaceWrapper.SetInterface(Cast<IGJT_WidgetInterface>(this)); 
-    
+    CachedInterfaceWrapper.SetInterface(this);
+
+    // Find animations
     ShowWidgetAnimationPtr = FindAnimation(FName("ShowWidgetAnimation"));
     HideWidgetAnimationPtr = FindAnimation(FName("HideWidgetAnimation"));
 
+    // Bind animation finished delegates
     if (ShowWidgetAnimationPtr)
     {
-        FWidgetAnimationDynamicEvent ShowAnimDelegate;
-        ShowAnimDelegate.BindDynamic(this, &UGJT_WidgetBase::OnShowAnimationFinished);
-
-        BindToAnimationFinished(ShowWidgetAnimationPtr, ShowAnimDelegate);
+        FWidgetAnimationDynamicEvent ShowDelegate;
+        ShowDelegate.BindUFunction(this, FName("OnShowAnimationFinished"));
+        BindToAnimationFinished(ShowWidgetAnimationPtr, ShowDelegate);
     }
 
     if (HideWidgetAnimationPtr)
     {
-        FWidgetAnimationDynamicEvent HideAnimDelegate;
-        HideAnimDelegate.BindDynamic(this, &UGJT_WidgetBase::OnShowAnimationFinished);
-
-        BindToAnimationFinished(HideWidgetAnimationPtr, HideAnimDelegate);
+        FWidgetAnimationDynamicEvent HideDelegate;
+        HideDelegate.BindUFunction(this, FName("OnHideAnimationFinished"));
+        BindToAnimationFinished(HideWidgetAnimationPtr, HideDelegate);
     }
 
     if (!ShowWidgetAnimationPtr || !HideWidgetAnimationPtr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Optional Show and/or Hide Animation missing. Please make sure this is intended!"));
+        UE_LOG(LogTemp, Warning, TEXT("Optional Show/Hide animations missing!"));
     }
 }
 
 UWidgetAnimation* UGJT_WidgetBase::FindAnimation(FName AnimName) const
 {
-    UWidgetBlueprintGeneratedClass* WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(GetClass());
-    if (!WidgetClass) return nullptr;
-
-    for (UWidgetAnimation* Anim : WidgetClass->Animations)
+    if (UWidgetBlueprintGeneratedClass* WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(GetClass()))
     {
-        if (Anim && Anim->GetMovieScene())
+        for (UWidgetAnimation* Anim : WidgetClass->Animations)
         {
-            if (Anim->GetMovieScene()->GetFName() == AnimName)
+            if (Anim && Anim->GetMovieScene() && Anim->GetMovieScene()->GetFName() == AnimName)
             {
                 return Anim;
             }
@@ -58,23 +57,22 @@ UWidgetAnimation* UGJT_WidgetBase::FindAnimation(FName AnimName) const
 
 void UGJT_WidgetBase::Show_Implementation()
 {
+    SetVisibility(ESlateVisibility::Visible);
+    BroadcastWidgetVisibilityEvent(ShowWidgetAnimationPtr ? EWidgetVisibilityState::FadingIn : EWidgetVisibilityState::Visible);
+
     if (ShowWidgetAnimationPtr)
     {
         PlayAnimation(ShowWidgetAnimationPtr);
-        SetVisibility(ESlateVisibility::Visible);
-        //BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::FadingIn);
-    }else
-    {
-       SetVisibility(ESlateVisibility::Visible);
     }
 }
 
 void UGJT_WidgetBase::Hide_Implementation()
 {
+    BroadcastWidgetVisibilityEvent(HideWidgetAnimationPtr ? EWidgetVisibilityState::FadingOut : EWidgetVisibilityState::Hidden);
+
     if (HideWidgetAnimationPtr)
     {
         PlayAnimation(HideWidgetAnimationPtr);
-        //BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::FadingIn);
     }
     else
     {
@@ -82,26 +80,44 @@ void UGJT_WidgetBase::Hide_Implementation()
     }
 }
 
+void UGJT_WidgetBase::OnCancelRequested_Implementation()
+{
+    IGJT_WidgetInterface::Execute_Hide(this);
+}
+
+void UGJT_WidgetBase::SetFocusedWidget_Implementation(UWidget* NewFocusedWidget)
+{
+    if (!NewFocusedWidget || NewFocusedWidget == FocusedWidget) return;
+
+    FocusedWidget = NewFocusedWidget;
+    UE_LOG(LogTemp, Warning, TEXT("Focused Widget changed: %s"), *FocusedWidget->GetName());
+
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        FocusedWidget->SetUserFocus(PC);
+    }
+}
+
 void UGJT_WidgetBase::OnVisibilityChanged_Implementation(EWidgetVisibilityState NewVisibilityType)
 {
+    // Optional override in BP
 }
 
 void UGJT_WidgetBase::BroadcastWidgetVisibilityEvent(EWidgetVisibilityState NewVisibilityType)
 {
     OnVisibilityChanged(NewVisibilityType);
-
     OnVisibilityEvent.Broadcast(CachedInterfaceWrapper, NewVisibilityType);
 }
 
 void UGJT_WidgetBase::OnShowAnimationFinished_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnShowAnimationFinished_Implementation"));
+    UE_LOG(LogTemp, Warning, TEXT("Show Animation Finished"));
 }
 
 void UGJT_WidgetBase::OnHideAnimationFinished_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("OnHideAnimationFinished_Implementation"));
-
+    UE_LOG(LogTemp, Warning, TEXT("Hide Animation Finished"));
     SetVisibility(ESlateVisibility::Collapsed);
     BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::Hidden);
 }
+

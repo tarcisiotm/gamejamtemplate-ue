@@ -16,12 +16,6 @@ void UGJT_UIManager::Initialize(FSubsystemCollectionBase& Collection)
 	TagToSpawnedWidgetMap.Empty();
 
 	FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &UGJT_UIManager::HandleWorldBeginPlay);
-	auto World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Error, TEXT("No world was found!"));
-		return;
-	}
 }
 
 void UGJT_UIManager::HandleWorldBeginPlay(UWorld* World, const UWorld::InitializationValues IValues)
@@ -41,17 +35,33 @@ void UGJT_UIManager::InitializeTagToWidgetMap()
 		WidgetConfig = Cast<UGJT_WidgetConfig>(Settings->WidgetConfigAssetPath.TryLoad());
 	}
 
-	if (!WidgetConfig)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UI Manager: WidgetDataTable is NULL!"));
-		return;
-	}
+	if (!WidgetConfig) { UE_LOG(LogTemp, Error, TEXT("UI Manager: WidgetDataTable is NULL!")); }
 }
 
 void UGJT_UIManager::OnPauseStateChanged(bool bInIsPaused)
 {
 	if (bInIsPaused) { ShowWidget_Implementation(GJT_Tags::UI_Menu_Pause); }
 	else { HideWidget_Implementation(GJT_Tags::UI_Menu_Pause); }
+}
+
+void UGJT_UIManager::OnVisibilityEvent(TScriptInterface<IGJT_WidgetInterface> WidgetInterface, EWidgetVisibilityState NewVisibility)
+{
+	if (NewVisibility != EWidgetVisibilityState::Hidden) { return; }
+
+	UObject* WidgetObj = WidgetInterface.GetObject();
+	UUserWidget* Widget = Cast<UUserWidget>(WidgetObj);
+
+	if (Widget)
+	{
+		bool bWasTopMost = (WidgetStack.Last() == Widget);
+
+		WidgetStack.Remove(Widget);
+		Widget->RemoveFromParent();
+
+		BroadcastTopMostWidgetChanged();
+
+		// todo: if the stack is empty, return focus to the game
+	}
 }
 
 TSubclassOf<UUserWidget> UGJT_UIManager::GetWidgetClassByTag(FGameplayTag WidgetTag)
@@ -91,12 +101,17 @@ TObjectPtr<UUserWidget> UGJT_UIManager::GetOrCreateWidgetByTag(FGameplayTag Widg
 	return Widget;
 }
 
+void UGJT_UIManager::BroadcastTopMostWidgetChanged()
+{
+	UUserWidget* topMostWidget = WidgetStack.Num() > 0 ? WidgetStack.Last() : nullptr;
+	OnTopMostWidgetChanged.Broadcast(topMostWidget);
+}
+
 void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 {
 	auto GameContext = IGJT_GameInstanceInterface::Execute_GetGameContext(GameInstanceInterface.GetObject());
 
-	EGJT_GameContext CurrentState =
-		static_cast<EGJT_GameContext>(static_cast<uint8>(GameContext));
+	EGJT_GameContext CurrentState = static_cast<EGJT_GameContext>(static_cast<uint8>(GameContext));
 
 	const FGJT_WidgetData* Data = WidgetConfig->WidgetMap.Find(WidgetTag);
 
@@ -104,12 +119,11 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 	{
 		EGJT_GameContext AllowedMask = static_cast<EGJT_GameContext>(Data->AllowedContexts);
 
-		bool bIsAllowed = EnumHasAnyFlags(AllowedMask, CurrentState);
-		//UE_LOG(LogTemp, Warning, TEXT("UI Check | %s | Result: %s"), *WidgetTag.ToString(), bIsAllowed ? TEXT("ALLOWED") : TEXT("BLOCKED"));
+		bool bIsAllowed = EnumHasAnyFlags(AllowedMask, CurrentState); //UE_LOG(LogTemp, Warning, TEXT("UI Check | %s | Result: %s"), *WidgetTag.ToString(), bIsAllowed ? TEXT("ALLOWED") : TEXT("BLOCKED"));
 
 		if (!bIsAllowed) { return; }
 	}
-
+	
 	TObjectPtr<UUserWidget> Widget = GetOrCreateWidgetByTag(WidgetTag);
 
 	if (!Widget || !Widget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))
@@ -119,11 +133,19 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 
 	if (!Widget->IsInViewport())
 	{
-		// todo properly pass the z order
-		Widget->AddToViewport(9999);
+		Widget->AddToViewport(WidgetStack.Num());
+
+		if (IGJT_WidgetInterface* WidgetInterface = Cast<IGJT_WidgetInterface>(Widget))
+		{
+			WidgetInterface->GetOnVisibilityEvent().AddDynamic(this, &UGJT_UIManager::OnVisibilityEvent);
+		}
+
+		WidgetStack.AddUnique(Widget);
+		IGJT_WidgetInterface::Execute_Show(Widget);
+
+		BroadcastTopMostWidgetChanged();
 	}
 
-	IGJT_WidgetInterface::Execute_Show(Widget);
 }
 
 void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)
@@ -136,4 +158,33 @@ void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)
 	}
 
 	IGJT_WidgetInterface::Execute_Hide(Widget);
+}
+
+void UGJT_UIManager::ProcessCancelRequest_Implementation()
+{
+	if (WidgetStack.Num() == 0) { return; }
+
+	UUserWidget* TopWidget = WidgetStack.Last();
+
+	if (TopWidget && TopWidget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))
+	{
+		IGJT_WidgetInterface::Execute_OnCancelRequested(TopWidget);
+	}
+}
+
+FGameplayTag UGJT_UIManager::GetTopMostWidgetTag() const
+{
+	if (WidgetStack.Num() == 0) return FGameplayTag::EmptyTag;
+
+	UUserWidget* TopWidget = WidgetStack.Last();
+
+	for (const auto& Pair : TagToSpawnedWidgetMap)
+	{
+		if (Pair.Value == TopWidget)
+		{
+			return Pair.Key;
+		}
+	}
+
+	return FGameplayTag::EmptyTag;
 }
