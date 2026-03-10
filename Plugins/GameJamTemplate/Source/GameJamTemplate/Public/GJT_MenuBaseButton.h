@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+
 #include "GJT_MenuBaseButton.generated.h"
 
 class UButton;
@@ -19,13 +20,15 @@ UCLASS()
 class GAMEJAMTEMPLATE_API UGJT_MenuBaseButton : public UUserWidget
 {
     GENERATED_BODY()
+public:
+    UGJT_MenuBaseButton(const FObjectInitializer& ObjectInitializer);
 
 public:
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     FOnGJTButtonClicked OnButtonClicked;
 
 protected:
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     UButton* Button;
 
     UPROPERTY(meta = (BindWidget))
@@ -49,6 +52,12 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GJT | Appearance")
     float ButtonHeight = 40.f;
 
+    UPROPERTY(EditAnywhere, Category = "GJT | Layout")
+    TEnumAsByte<EHorizontalAlignment> TextHorizontalAlignment = HAlign_Right;
+
+    UPROPERTY(EditAnywhere, Category = "GJT | Layout")
+    TEnumAsByte<EVerticalAlignment> TextVerticalAlignment = VAlign_Center;
+
     UFUNCTION()
     void OnInternalButtonClicked();
 
@@ -60,6 +69,9 @@ protected:
 
     UFUNCTION()
     void OnUnhovered();
+
+    virtual void NativeOnAddedToFocusPath(const FFocusEvent& InFocusEvent) override;
+    virtual void NativeOnRemovedFromFocusPath(const FFocusEvent& InFocusEvent) override;
 
     virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;

@@ -39,7 +39,8 @@ public:
         ESceneUnloadType UnloadType,
         bool bUsesTransition) override;
 
-    virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() override { return OnAfterLevelLoad; }
+    virtual F_GJT_OnLevelTransition& GetOnBeforeLevelLoadedEvent() override { return OnBeforeLevelLoad; }
+    virtual F_GJT_OnLevelTransition& GetOnAfterLevelLoadedEvent() override { return OnAfterLevelLoad; }
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() override { return OnTransitionFinished; }
     virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() override { return OnLevelTransitionProgress; }
 
@@ -70,12 +71,13 @@ public:
 
 protected:
     UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-    F_GJT_OnLevelTransitionComplete OnAfterLevelLoad;
-
-    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    F_GJT_OnLevelTransition OnBeforeLevelLoad;
+    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
+    F_GJT_OnLevelTransition OnAfterLevelLoad;
+    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnFadeFinished OnTransitionFinished;
 
-    UPROPERTY(BlueprintAssignable, Category = "GJT|Events")
+    UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
     F_GJT_OnLevelTransitionProgress OnLevelTransitionProgress;
 
     ETransitionStage CurrentStage;

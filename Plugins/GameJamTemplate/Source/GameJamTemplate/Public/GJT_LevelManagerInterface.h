@@ -5,7 +5,7 @@
 #include "GJT_Types.h"
 #include "GJT_LevelManagerInterface.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(F_GJT_OnLevelTransitionComplete, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(F_GJT_OnLevelTransition, TSoftObjectPtr<UWorld>, OldLevel, TSoftObjectPtr<UWorld>, NewLevel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(F_GJT_OnLevelTransitionProgress, float, Progress);
 
 UENUM(BlueprintType)
@@ -43,7 +43,8 @@ public:
 
     virtual void EditorOnly_SetEditorBootstrapMapPath(FSoftObjectPath EditorBootstrapMapPath) = 0;
 
-    virtual F_GJT_OnLevelTransitionComplete& GetOnAfterLevelLoadedEvent() = 0;
+    virtual F_GJT_OnLevelTransition& GetOnBeforeLevelLoadedEvent() = 0;
+    virtual F_GJT_OnLevelTransition& GetOnAfterLevelLoadedEvent() = 0;
     virtual F_GJT_OnFadeFinished& GetOnWidgetTransitionCompletedEvent() = 0;
     virtual F_GJT_OnLevelTransitionProgress& GetOnLevelTransitionProgressEvent() = 0;
 };

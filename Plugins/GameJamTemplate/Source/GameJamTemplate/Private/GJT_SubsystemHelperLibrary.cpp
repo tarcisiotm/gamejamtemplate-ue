@@ -3,26 +3,37 @@
 
 #include "GJT_SubsystemHelperLibrary.h"
 #include "GJT_LevelManager.h" 
+#include "GJT_PauseManager.h" 
+#include "GJT_GameInstance.h" 
+#include "GJT_UIManager.h" 
 
-//UObject* UGJT_SubsystemHelperLibrary::GetLevelManager(const UObject* WorldContextObject)
-//{
-//    if (!WorldContextObject) return nullptr;
-//    UWorld* World = WorldContextObject->GetWorld();
-//    if (!World) return nullptr;
-//
-//    return World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
-//}
+TScriptInterface<IGJT_GameInstanceInterface> UGJT_SubsystemHelperLibrary::GetGameInstanceInterface(const UObject* WorldContextObject)
+{
+    if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
+    {
+        if (UGameInstance* GameInstance = World->GetGameInstance())
+        {
+            if (GameInstance->GetClass()->ImplementsInterface(UGJT_GameInstanceInterface::StaticClass()))
+            {
+                return TScriptInterface<IGJT_GameInstanceInterface>(GameInstance);
+            }
+        }
+    }
+
+    return nullptr;
+}
 
 TScriptInterface<IGJT_LevelManagerInterface> UGJT_SubsystemHelperLibrary::GetLevelManagerInterface(const UObject* WorldContextObject)
 {
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World || !World->GetGameInstance()) return nullptr;
+    return GetSubsystemInterface<IGJT_LevelManagerInterface, UGJT_LevelManager>(WorldContextObject);
+}
 
-    UGJT_LevelManager* Subsystem = World->GetGameInstance()->GetSubsystem<UGJT_LevelManager>();
+TScriptInterface<IGJT_PauseManagerInterface> UGJT_SubsystemHelperLibrary::GetPauseManagerInterface(const UObject* WorldContextObject)
+{
+    return GetSubsystemInterface<IGJT_PauseManagerInterface, UGJT_PauseManager>(WorldContextObject);
+}
 
-    TScriptInterface<IGJT_LevelManagerInterface> Interface;
-    Interface.SetObject(Subsystem);
-    Interface.SetInterface(Cast<IGJT_LevelManagerInterface>(Subsystem));
-
-    return Interface;
+TScriptInterface<IGJT_UIManagerInterface> UGJT_SubsystemHelperLibrary::GetUIManagerInterface(const UObject* WorldContextObject)
+{
+    return GetSubsystemInterface<IGJT_UIManagerInterface, UGJT_UIManager>(WorldContextObject);
 }

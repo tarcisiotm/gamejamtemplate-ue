@@ -2,13 +2,14 @@
 
 A simple Game Jam template with the following features:
 
--Main Menu
--Level Loading (with transitions and loading progress)
+- Ready to use menus (Main, Pause, Settings)
+- Level Loading (with transitions and loading progress)
+- UI Manager
+- Audio Manager (In Progress)
 
 TODO:
--Pause Menu
--Audio Manager
--Basic Game Structure for fast prototyping
+- Audio Manager
+- Basic Game Structure for fast prototyping
 
 ## Dependencies
 

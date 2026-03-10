@@ -15,7 +15,7 @@ class GAMEJAMTEMPLATE_API UGJT_AsyncLevelTransition : public UBlueprintAsyncActi
 
 public:
     UPROPERTY(BlueprintAssignable)
-    F_GJT_OnLevelTransitionComplete OnCompleted;
+    F_GJT_OnLevelTransition OnCompleted;
 
     UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = "true", WorldContext = "WorldContextObject"), Category = "GJT | Navigation")
     static UGJT_AsyncLevelTransition* TransitionToLevelAsync(
@@ -29,7 +29,7 @@ public:
 private:
     UObject* WorldContext;
     TSoftObjectPtr<UWorld> PendingLevel;
-    ESceneUnloadType PendingUnloadType;
+    ESceneUnloadType PendingUnloadType = ESceneUnloadType::BeforeNewSceneLoads;
     bool bPendingUsesTransition;
 
     UFUNCTION()
