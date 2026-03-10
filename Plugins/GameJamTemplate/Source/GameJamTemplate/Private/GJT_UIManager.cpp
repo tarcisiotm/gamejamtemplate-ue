@@ -6,7 +6,7 @@
 #include "GJT_DeveloperSettings.h"
 #include "GJT_GameplayTags.h"
 #include "GJT_WidgetInterface.h"
-
+#include "Slate/SObjectWidget.h"
 void UGJT_UIManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -48,15 +48,40 @@ void UGJT_UIManager::OnVisibilityEvent(TScriptInterface<IGJT_WidgetInterface> Wi
 {
 	if (NewVisibility != EWidgetVisibilityState::Hidden) { return; }
 
+	if (WidgetInterface.GetObject())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("-----Widget Interface belongs to Object: %s"), *WidgetInterface.GetObject()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("-----Visibility event: %d"), (int32)NewVisibility);
+	}
+
 	UObject* WidgetObj = WidgetInterface.GetObject();
 	UUserWidget* Widget = Cast<UUserWidget>(WidgetObj);
 
 	if (Widget)
 	{
-		bool bWasTopMost = (WidgetStack.Last() == Widget);
+		UE_LOG(LogTemp, Warning, TEXT("Visibility event 2"));
+
+		//bool bWasTopMost = (WidgetStack.Last() == Widget);
 
 		WidgetStack.Remove(Widget);
+		UE_LOG(LogTemp, Warning, TEXT("Stack size %d"), WidgetStack.Num());
+
 		Widget->RemoveFromParent();
+
+		//FocusStack.RemoveAll([Widget](const F_GJT_UIStackEntry& Entry)
+		//{
+		//	return Entry.Widget == Widget;
+		//});
+
+		//if (FocusStack.Num() > 0)
+		//{
+		//	F_GJT_UIStackEntry Previous = FocusStack.Pop();
+
+		//	if (Previous.FocusedWidget.IsValid())
+		//	{
+		//		FSlateApplication::Get().SetUserFocus(0, Previous.FocusedWidget);
+		//	}
+		//}
 
 		BroadcastTopMostWidgetChanged();
 
@@ -104,6 +129,7 @@ TObjectPtr<UUserWidget> UGJT_UIManager::GetOrCreateWidgetByTag(FGameplayTag Widg
 void UGJT_UIManager::BroadcastTopMostWidgetChanged()
 {
 	UUserWidget* topMostWidget = WidgetStack.Num() > 0 ? WidgetStack.Last() : nullptr;
+	//UUserWidget* topMostWidget = FocusStack.Num() > 0 ? FocusStack.Last().FocusedWidget : nullptr;
 	OnTopMostWidgetChanged.Broadcast(topMostWidget);
 }
 
@@ -140,7 +166,37 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 			WidgetInterface->GetOnVisibilityEvent().AddDynamic(this, &UGJT_UIManager::OnVisibilityEvent);
 		}
 
+		UWidget* FinalFocusTarget = Widget;
+
+		while (FinalFocusTarget && FinalFocusTarget->Implements<UGJT_WidgetFocusInterface>())
+		{
+			UWidget* NextTarget = IGJT_WidgetFocusInterface::Execute_GetDefaultFocusTarget(FinalFocusTarget);
+
+			IGJT_WidgetFocusInterface::Execute_SetFocusedWidget(FinalFocusTarget, NextTarget);
+			if (NextTarget == nullptr || NextTarget == FinalFocusTarget) { break; }
+
+			FinalFocusTarget = NextTarget;
+		}
+
+		//F_GJT_UIStackEntry Entry;
+		//Entry.Widget = FinalFocusTarget; // whatever is currently on top
+		//Entry.FocusedWidget = FSlateApplication::Get().GetUserFocusedWidget(0);
+		//FocusStack.Push(Entry);
+
+		// only on pop?
+		//if (FinalFocusTarget)
+		//{
+		//	TSharedPtr<SWidget> SlateWidget = FinalFocusTarget->GetCachedWidget();
+		//	if (SlateWidget.IsValid())
+		//	{
+		//		FSlateApplication::Get().SetUserFocus(0, SlateWidget);
+		//	}
+		//}
+
 		WidgetStack.AddUnique(Widget);
+
+		UE_LOG(LogTemp, Warning, TEXT("Stack size %d"), WidgetStack.Num());
+
 		IGJT_WidgetInterface::Execute_Show(Widget);
 
 		BroadcastTopMostWidgetChanged();
@@ -150,6 +206,7 @@ void UGJT_UIManager::ShowWidget_Implementation(FGameplayTag WidgetTag)
 
 void UGJT_UIManager::HideWidget_Implementation(FGameplayTag WidgetTag)
 {
+	UE_LOG(LogTemp, Warning, TEXT("HideWidget_Implementation: %s"), *WidgetTag.ToString());
 	TObjectPtr<UUserWidget> Widget = GetOrCreateWidgetByTag(WidgetTag);
 
 	if (!Widget || !Widget->GetClass()->ImplementsInterface(UGJT_WidgetInterface::StaticClass()))

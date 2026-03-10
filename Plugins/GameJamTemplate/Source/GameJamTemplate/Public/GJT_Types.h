@@ -31,7 +31,8 @@ enum class EWidgetType : uint8
 {
     None,
     PauseMenu UMETA(DisplayName = "Pause Menu"),
-    TransitionScreen UMETA(DisplayName = "Transition Screen")
+    TransitionScreen UMETA(DisplayName = "Transition Screen"),
+    SettingsMenu UMETA(DisplayName = "Settings Menu"),
 };
 
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))

@@ -7,5 +7,6 @@
 namespace GJT_Tags
 {
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Menu_Pause);
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Menu_Settings);
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Screen_Transition);
 }

@@ -22,15 +22,8 @@ public:
 	virtual void OnPauseStateChanged_Implementation(bool IsPaused) override;
 
 protected:
-	UPROPERTY(BlueprintAssignable, Category = "GJT | Events")
-	F_GJT_OnFadeFinished OnFadeFinished;
 
 	virtual void Show_Implementation() override;
 
 	virtual void Hide_Implementation() override;
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "GJT | Events")
-	void HandleTransitionDone(bool bIsPaused);
-
-
 };

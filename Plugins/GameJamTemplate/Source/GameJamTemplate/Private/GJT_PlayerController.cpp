@@ -32,12 +32,12 @@ void AGJT_PlayerController::SetupInputComponent()
 
         if (PauseInputAction)
         {
-            EnhancedInputComponent->BindAction(PauseInputAction, ETriggerEvent::Triggered, this, &AGJT_PlayerController::HandleInputPauseRequest);
+            EnhancedInputComponent->BindAction(PauseInputAction, ETriggerEvent::Started, this, &AGJT_PlayerController::HandleInputPauseRequest);
         }
 
         if (CancelInputAction)
         {
-            EnhancedInputComponent->BindAction(CancelInputAction, ETriggerEvent::Triggered, this, &AGJT_PlayerController::HandleCancelRequest);
+            EnhancedInputComponent->BindAction(CancelInputAction, ETriggerEvent::Started, this, &AGJT_PlayerController::HandleCancelRequest);
         }
     }
 }
@@ -66,7 +66,7 @@ void AGJT_PlayerController::UpdateInputMode(bool bIsUIActive, UWidget* FocusTarg
         if (targetWidget)
         {
             Mode.SetWidgetToFocus(targetWidget->TakeWidget());
-            //targetWidget->SetFocus();
+              //targetWidget->SetFocus();
             targetWidget->SetUserFocus(this);
         }
 
@@ -165,22 +165,23 @@ void AGJT_PlayerController::HandleCancelRequest(const FInputActionValue& Value)
 void AGJT_PlayerController::HandleTopMostWidgetChanged(UUserWidget* NewTopMostWidget)
 {
     TopMostWidget = NewTopMostWidget;
+    UE_LOG(LogTemp, Warning, TEXT("HandleTopMostWidgetChanged"));
 
     if (NewTopMostWidget)
     {
         // Start with the top-most widget
         UWidget* FinalFocusTarget = NewTopMostWidget;
 
-        // Keep tunneling as long as the current target implements the interface
         while (FinalFocusTarget && FinalFocusTarget->Implements<UGJT_WidgetFocusInterface>())
         {
             UWidget* NextTarget = IGJT_WidgetFocusInterface::Execute_GetDefaultFocusTarget(FinalFocusTarget);
 
             IGJT_WidgetFocusInterface::Execute_SetFocusedWidget(FinalFocusTarget, NextTarget);
-            // If the widget returns itself or nullptr, we've reached the end of the chain
+
             if (NextTarget == nullptr || NextTarget == FinalFocusTarget) { break; }
 
             FinalFocusTarget = NextTarget;
+            UE_LOG(LogTemp, Warning, TEXT("HandleTopMostWidgetChanged 2"));
         }
 
         // Apply Input Mode and final focus

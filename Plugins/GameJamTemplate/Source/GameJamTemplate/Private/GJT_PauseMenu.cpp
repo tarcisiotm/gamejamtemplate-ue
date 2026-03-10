@@ -18,10 +18,3 @@ void UGJT_PauseMenu::Hide_Implementation()
 {
     Super::Hide_Implementation();
 }
-
-void UGJT_PauseMenu::HandleTransitionDone_Implementation(bool bIsPaused)
-{
-    if (bIsPaused) { return; }
-    
-    SetVisibility(ESlateVisibility::Hidden);
-}

@@ -57,6 +57,7 @@ UWidgetAnimation* UGJT_WidgetBase::FindAnimation(FName AnimName) const
 
 void UGJT_WidgetBase::Show_Implementation()
 {
+    UE_LOG(LogTemp, Warning, TEXT("Show_Implementation %s"), *GetName());
     SetVisibility(ESlateVisibility::Visible);
     BroadcastWidgetVisibilityEvent(ShowWidgetAnimationPtr ? EWidgetVisibilityState::FadingIn : EWidgetVisibilityState::Visible);
 
@@ -68,6 +69,8 @@ void UGJT_WidgetBase::Show_Implementation()
 
 void UGJT_WidgetBase::Hide_Implementation()
 {
+    UE_LOG(LogTemp, Warning, TEXT("Hide_Implementation %s"), *GetName());
+
     BroadcastWidgetVisibilityEvent(HideWidgetAnimationPtr ? EWidgetVisibilityState::FadingOut : EWidgetVisibilityState::Hidden);
 
     if (HideWidgetAnimationPtr)
@@ -82,6 +85,8 @@ void UGJT_WidgetBase::Hide_Implementation()
 
 void UGJT_WidgetBase::OnCancelRequested_Implementation()
 {
+    //UE_LOG(LogTemp, Warning, TEXT("OnCancelRequested_Implementation %s"), *GetName());
+
     IGJT_WidgetInterface::Execute_Hide(this);
 }
 
@@ -111,13 +116,12 @@ void UGJT_WidgetBase::BroadcastWidgetVisibilityEvent(EWidgetVisibilityState NewV
 
 void UGJT_WidgetBase::OnShowAnimationFinished_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Show Animation Finished"));
+    UE_LOG(LogTemp, Warning, TEXT("Show Animation Finished on %s"), *GetName());
 }
 
 void UGJT_WidgetBase::OnHideAnimationFinished_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Hide Animation Finished"));
+    UE_LOG(LogTemp, Warning, TEXT("Hide Animation Finished on %s"), *GetName());
     SetVisibility(ESlateVisibility::Collapsed);
     BroadcastWidgetVisibilityEvent(EWidgetVisibilityState::Hidden);
 }
-

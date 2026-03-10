@@ -15,6 +15,12 @@ class FGameplayTags;
 class IGJT_GameInstanceInterface;
 class IGJT_WidgetInterface;
 
+//struct F_GJT_UIStackEntry
+//{
+//	TObjectPtr<UWidget> Widget;
+//	TSharedPtr<SWidget> FocusedWidget;
+//};
+
 /**
  * The UI Manager exists for the whole lifecycle of the game.
  * Show/Hide Widget will try to automatically play the default animations.
@@ -38,6 +44,9 @@ public:
 
 protected:
 	FOnTopMostWidgetChanged OnTopMostWidgetChanged;
+	//TArray<TWeakObjectPtr<UWidget>> FocusStack;
+	//TArray<TSharedPtr<SWidget>> FocusStack;
+	//TArray<F_GJT_UIStackEntry> FocusStack;
 
 	void HandleWorldBeginPlay(UWorld* World, const UWorld::InitializationValues IValues);
 
